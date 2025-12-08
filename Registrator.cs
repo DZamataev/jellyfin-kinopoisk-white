@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
     {
         public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
         {
-            serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, TestMetadataProvider>();
+            serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MetadataProvider>();
         }
     }
 }

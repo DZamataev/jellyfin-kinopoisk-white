@@ -5,7 +5,9 @@
             "label": "build",
             "command": "dotnet",
             "type": "process",
-            "options": { "cwd": "${userHome}", },
+            "options": {
+                "cwd": "${userHome}"
+            },
             "args": [
                 "build",
                 "${workspaceFolder}/${workspaceFolderBasename}.csproj",
@@ -27,28 +29,43 @@
             }
         },
         {
+            "label": "install",
+            "command": "cp",
+            "type": "shell",
+            "args": [
+                "${workspaceFolder}/bin/Debug/net8.0/${workspaceFolderBasename}.dll",
+                "/output/${workspaceFolderBasename}"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "watch",
             "command": "dotnet",
             "type": "process",
-            "options": { "cwd": "${userHome}", },
+            "options": {
+                "cwd": "${userHome}"
+            },
             "args": [
                 "watch",
                 "--no-hot-reload",
                 "-property:GenerateFullPaths=true",
                 "-consoleloggerparameters:NoSummary",
                 "build",
-                "--project", "${workspaceFolder}/${workspaceFolderBasename}.csproj",
-                "--no-restore",
+                "--project",
+                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
+                "--no-restore"
             ],
             "group": {
                 "kind": "test",
-                "isDefault": true,
+                "isDefault": true
             },
             "presentation": {
                 "echo": false,
-                "reveal": "silent",
+                "reveal": "silent"
             },
-            "runOptions": { "runOn": "folderOpen" }
-        },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
     ]
 }
