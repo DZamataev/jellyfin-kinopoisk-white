@@ -1,0 +1,3 @@
+{
+    "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": false,
+}

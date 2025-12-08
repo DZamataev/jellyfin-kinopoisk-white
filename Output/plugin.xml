@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Plugin
+    Name="Test Plugin"
+    Id="test-plugin-id"
+    Version="1.0.0"
+    Description="Minimal test plugin">
+</Plugin>

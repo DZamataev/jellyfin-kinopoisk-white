@@ -1,0 +1,25 @@
+{
+    "name": "dotnet-dev-tools",
+    "image": "mcr.microsoft.com/dotnet/sdk:8.0",
+    "remoteUser": "app",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "csharp.semanticHighlighting.enabled": true,
+                "files.eol": "\n"
+            }
+        }
+    },
+    "mounts": [
+        {
+            "type": "volume",
+            "source": "dotnet-packages",
+            "target": "/home/app/.nuget"
+        },
+        {
+            "type": "bind",
+            "source": "/Users/bear/Library/Application Support/jellyfin/plugins",
+            "target": "/output"
+        }
+    ]
+}
