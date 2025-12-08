@@ -22,12 +22,9 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
         }
     
         public Task<MetadataResult<Movie>>
-        GetMetadata(MovieInfo info, CancellationToken cancellationToken)
-        {
-            var result = new MetadataResult<Movie>
-            {
-                Item = new Movie
-                {
+        GetMetadata(MovieInfo info, CancellationToken cancellationToken) {
+            var result = new MetadataResult<Movie> {
+                Item = new Movie {
                     Name = "Test Movie",
                     Overview = "Test description",
                     ProductionYear = 2023,
@@ -46,8 +43,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
         }
     
         public Task<IEnumerable<RemoteSearchResult>>
-        GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
-        {
+        GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken) {
             _logger.LogInformation("GetSearchResults");
 
             if (string.IsNullOrEmpty(searchInfo.Name)) {
@@ -55,10 +51,8 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
                 return Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
             }
 
-            var results = new List<RemoteSearchResult>
-            {
-                new RemoteSearchResult
-                {
+            var results = new List<RemoteSearchResult> {
+                new RemoteSearchResult {
                     Name = searchInfo.Name,
                     ProductionYear = searchInfo.Year ?? 2023,
                     ProviderIds = new Dictionary<string, string> { { "TestProvider", $"test-{searchInfo.Name}" } }
@@ -69,8 +63,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
         }
 
         public async Task<HttpResponseMessage>
-        GetImageResponse(string url, CancellationToken cancellationToken)
-        {
+        GetImageResponse(string url, CancellationToken cancellationToken) {
             using var httpClient = new HttpClient();
             var response = await httpClient.GetAsync(url, cancellationToken);
 

@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
         public override string Description => "Test plugin description";
         public override Guid Id => Guid.Parse("33e6d249-648f-aaaa-a9ce-497be06c08df");
 
-        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer) 
+        public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
             : base(applicationPaths, xmlSerializer)
         {
             Instance = this;
