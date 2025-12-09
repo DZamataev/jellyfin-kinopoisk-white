@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Serialization;
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Providers;
+using MediaBrowser.Controller.Entities.Movies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Jellyfin.Plugin.KinopoiskWhiteList {
@@ -24,5 +26,11 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
 
     public class PluginConfiguration : BasePluginConfiguration {
         public bool EnableLogging { get; set; } = true;
+    }
+
+    public class KinopoiskPluginServiceRegistrator : IPluginServiceRegistrator {
+        public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost) {
+            serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MetadataProvider>();
+        }
     }
 }

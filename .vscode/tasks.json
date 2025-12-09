@@ -10,7 +10,7 @@
             },
             "args": [
                 "build",
-                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
+                "${workspaceFolder}/Jellyfin.Plugin.KinopoiskWhiteList/Jellyfin.Plugin.KinopoiskWhiteList.csproj",
                 "--no-restore",
                 "-property:GenerateFullPaths=true",
                 "-consoleloggerparameters:NoSummary"
@@ -36,7 +36,7 @@
             "type": "shell",
             "options": { "cwd": "${userHome}" },
             "args": [
-                "${workspaceFolder}/bin/Debug/net8.0/${workspaceFolderBasename}.dll",
+                "${workspaceFolder}/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhiteList.dll",
                 "/output/${workspaceFolderBasename}"
             ],
             "problemMatcher": [],
@@ -61,7 +61,7 @@
                 "-consoleloggerparameters:NoSummary",
                 "build",
                 "--project",
-                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
+                "${workspaceFolder}/Jellyfin.Plugin.KinopoiskWhiteList/Jellyfin.Plugin.KinopoiskWhiteList.csproj",
                 "--no-restore"
             ],
             "group": {
