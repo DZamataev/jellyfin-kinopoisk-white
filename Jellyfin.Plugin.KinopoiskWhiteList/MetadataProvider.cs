@@ -55,7 +55,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
 
             result.Item = new Movie {
                 Id = Guid.NewGuid(),
-                Name = title + "(Test Movie)",
+                Name = title + "(Test Movie reloaded)",
                 Overview = "Test description с кириллицей",
                 ProductionYear = year,
                 DateCreated = DateTime.UtcNow,

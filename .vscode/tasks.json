@@ -25,26 +25,35 @@
                 "showReuseMessage": false,
                 "panel": "dedicated",
                 "reveal": "never",
-                "revealProblems": "onProblem"
+                "revealProblems": "onProblem",
+                "clear": true,
+                "close": true,
             }
         },
         {
             "label": "install",
             "command": "cp",
             "type": "shell",
+            "options": { "cwd": "${userHome}" },
             "args": [
                 "${workspaceFolder}/bin/Debug/net8.0/${workspaceFolderBasename}.dll",
                 "/output/${workspaceFolderBasename}"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "showReuseMessage": false,
+                "clear": true,
+                "close": true,
+            }
         },
         {
             "label": "watch",
             "command": "dotnet",
             "type": "process",
-            "options": {
-                "cwd": "${userHome}"
-            },
+            "options": { "cwd": "${userHome}" },
             "args": [
                 "watch",
                 "--no-hot-reload",
