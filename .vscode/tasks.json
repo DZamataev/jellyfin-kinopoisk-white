@@ -51,6 +51,32 @@
             }
         },
         {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "options": {
+                "cwd": "${userHome}",
+            },
+            "args": [
+                "test",
+                "${workspaceFolder}/Test/Test.csproj",
+                "--no-restore",
+                "-property:GenerateFullPaths=true",
+                "-consoleloggerparameters:NoSummary"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": false,
+                "showReuseMessage": false,
+                "panel": "dedicated",
+                "reveal": "silent",
+                "revealProblems": "never",
+            }
+        },
+        {
             "label": "watch",
             "command": "dotnet",
             "type": "process",
@@ -65,10 +91,6 @@
                 "${workspaceFolder}/Plugin/Plugin.csproj",
                 "--no-restore"
             ],
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
             "presentation": {
                 "echo": false,
                 "reveal": "silent"

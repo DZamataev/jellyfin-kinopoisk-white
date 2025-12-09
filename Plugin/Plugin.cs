@@ -10,7 +10,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Jellyfin.Plugin.KinopoiskWhiteList {
+namespace Jellyfin.Plugin.KinopoiskWhite {
     public class Plugin : BasePlugin<PluginConfiguration> {
         public static Plugin Instance { get; private set; }
         public override string Name => Constants.ProviderName;
