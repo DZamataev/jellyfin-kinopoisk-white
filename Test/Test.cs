@@ -159,10 +159,55 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
 
         [Theory]
         [InlineData("fight club", 361, "Бойцовский клуб")]
-        public async void ShouldGetShortInfo(string query, int exId, string exTitle) {
-            ShortInfo info = await Api.Instance.SuggestSearch(query);
+        public async void ShouldGetShortInfo(string keyword, int exId, string exTitle) {
+            ShortInfo info = await Api.Instance.SuggestSearch(keyword);
             Assert.Equal(info.Id, exId);
             Assert.Equal(info.Title, exTitle);
+        }
+
+        [Theory]
+        [InlineData("/tmp/videos/Fight.Club.1999.1080p.BrRip.x264.YIFY.mp4", 361, "Бойцовский клуб")]
+        public async void ShouldGetShortInfoFromPath(string path, int exId, string exTitle) {
+            var (title, year) = Api.Instance.ParseFileName(path);
+            var keyword = $"{title} {year}";
+            ShortInfo info = await Api.Instance.SuggestSearch(keyword);
+            Assert.Equal(info.Id, exId);
+            Assert.Equal(info.Title, exTitle);
+        }
+
+        [Fact(Skip = "disabled")]
+        public async void ShouldReturnSomething() {
+            var variables = new {
+                keyword = "fight club",
+                yandexCityId = 10777,
+                limit = 0
+            };
+
+            var operationName = "SuggestSearch";
+            var query = Api.GetEmbeddedQuery(operationName);
+            var request = new { operationName, variables, query };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(request);
+            var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await Api.Instance._client.PostAsync("/graphql", content);
+            response.EnsureSuccessStatusCode();
+            var jsonString = await response.Content.ReadAsStringAsync();
+
+            var options = new System.Text.Json.JsonSerializerOptions {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            };
+            var result = System.Text.Json.JsonSerializer.Deserialize<GqlResponse<SuggestData>>(jsonString, options);
+
+            Assert.NotNull(result);
+            Assert.NotNull(result?.Data);
+            Assert.NotNull(result?.Data?.Suggest);
+            Assert.NotNull(result?.Data?.Suggest?.Top);
+            Assert.NotNull(result?.Data?.Suggest?.Top?.TopResult);
+            var top = result?.Data?.Suggest?.Top?.TopResult?.Global;
+            Assert.NotNull(top);
+
+            Assert.Equal("Бойцовский клуб", top.Title.Russian);
         }
     }
 }

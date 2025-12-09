@@ -10,7 +10,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
     public class Api {
         private static readonly System.Lazy<Api> _instance = new System.Lazy<Api>(() => new Api());
         public static Api Instance => _instance.Value;
-        private readonly HttpClient _client;
+        public readonly HttpClient _client;
 
         private Api() {
             _client = new HttpClient();
@@ -74,13 +74,12 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 limit = 0
             };
             var response = await Call("SuggestSearch", request);
-            var result = JsonSerializer.Deserialize<SuggestResult>(response);
+            var options = new JsonSerializerOptions {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            };
+            var result = JsonSerializer.Deserialize<GqlResponse<SuggestData>>(response, options);
 
-            if (result?.TopResult == null) {
-                throw new System.Exception("Top result is null");
-            }
-
-            var top = result?.TopResult?.Global;
+            var top = result?.Data?.Suggest?.Top?.TopResult?.Global;
 
             if (top == null) {
                 throw new System.Exception("Top Global result is null");

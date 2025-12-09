@@ -10,7 +10,22 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
         public string Poster { get; set; }
     }
 
-    public class SuggestResult
+    public class GqlResponse<T>
+    {
+        public T Data { get; set; }
+    }
+
+    public class SuggestData
+    {
+        public SuggestTop Suggest { get; set; }
+    }
+
+    public class SuggestTop
+    {
+        public SuggestTopResult Top { get; set; }
+    }
+
+    public class SuggestTopResult
     {
         public SuggestResultGlobal TopResult { get; set; }
         public List<SuggestResultMovie> Movies { get; set; }
