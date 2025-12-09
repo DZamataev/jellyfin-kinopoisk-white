@@ -8,6 +8,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
         public string TitleOrig { get; set; }
         public double Rating { get; set; }
         public string Poster { get; set; }
+        public int ProductionYear { get; set; }
     }
 
     public class GqlResponse<T>

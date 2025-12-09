@@ -33,7 +33,7 @@
         },
         {
             "label": "install",
-            "command": "mkdir -p ${outputDir} && cp ${pluginDll} ${outputDir}",
+            "command": "mkdir -p ${outputDir} && cp ${pluginDll} ${outputDir} && rm -f ${outputDir}/meta.json",
             "type": "shell",
             "options": {
                 "cwd": "${userHome}",

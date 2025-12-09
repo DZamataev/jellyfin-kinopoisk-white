@@ -56,15 +56,25 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             return reader.ReadToEnd();
         }
 
-        private async Task<string> Call(string operationName, object variables) {
+        private async Task<T> Call<T>(string operationName, object variables) {
             var query = GetEmbeddedQuery(operationName);
             var request = new { operationName, variables, query };
             var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsync("/graphql", content);
+            var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync("/graphql", data);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            };
+            var result = JsonSerializer.Deserialize<GqlResponse<T>>(content, options);
+            if (result.Data == null) {
+                throw new System.Exception("Result data is null");
+            }
+
+            return result.Data;
         }
 
         public async Task<ShortInfo> SuggestSearch(string keyword) {
@@ -73,17 +83,8 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 yandexCityId = 10777,
                 limit = 0
             };
-            var response = await Call("SuggestSearch", request);
-            var options = new JsonSerializerOptions {
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-            };
-            var result = JsonSerializer.Deserialize<GqlResponse<SuggestData>>(response, options);
-
-            var top = result?.Data?.Suggest?.Top?.TopResult?.Global;
-
-            if (top == null) {
-                throw new System.Exception("Top Global result is null");
-            }
+            var result = await Call<SuggestData>("SuggestSearch", request);
+            var top = result.Suggest.Top.TopResult.Global;
 
             return new ShortInfo {
                 Id = top.Id,
@@ -91,10 +92,11 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 TitleOrig = top.Title.Original,
                 Rating = top.Rating.Kinopoisk.Value,
                 Poster = top.Gallery.Posters.HdVertical.AvatarsUrl,
+                ProductionYear = top.ProductionYear,
             };
         }
 
-        public Movie GetMovie(string path) {
+        public async Task<Movie> GetMovie(string path) {
             var (title, year) = ParseFileName(path);
             var movie = new Movie {
                 Id = System.Guid.NewGuid(),
@@ -103,6 +105,15 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 ProductionYear = year,
                 Overview = "Test description с кириллицей",
             };
+
+            string keyword = (year == null) ? title : $"{title} {year}";
+            ShortInfo shortInfo = await SuggestSearch(keyword);
+
+            movie.Name = shortInfo.Title;
+            movie.ProductionYear = shortInfo.ProductionYear;
+            // movie. = shortInfo.Rating;
+            // movie. = shortInfo.Poster;
+
             return movie;
         }
     }

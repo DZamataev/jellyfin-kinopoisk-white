@@ -28,7 +28,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             api = Api.Instance;
         }
 
-        public /* async */ Task<MetadataResult<Movie>>
+        public async Task<MetadataResult<Movie>>
         GetMetadata(MovieInfo info, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"GetMetadata {info.Name}");
@@ -39,7 +39,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 ResultLanguage = Constants.ProviderMetadataLanguage
             };
 
-            result.Item = api.GetMovie(Path.GetFileName(info.Path));
+            result.Item = await api.GetMovie(Path.GetFileName(info.Path));
 
             // можно убрать
             if (result.Item != null)
@@ -48,8 +48,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             var json = new JsonSerializerOptions { WriteIndented = true };
             _logger.LogInformation(JsonSerializer.Serialize(info, json));
 
-            // return result;
-            return Task.FromResult(result);
+            return result;
         }
     
         public Task<IEnumerable<RemoteSearchResult>>
