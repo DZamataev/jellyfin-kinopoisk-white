@@ -40,7 +40,7 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
             return (fileName, null);
         }
     
-        public /* async */ Task<MetadataResult<Movie>>
+        public async Task<MetadataResult<Movie>>
         GetMetadata(MovieInfo info, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"GetMetadata {info.Name}");
@@ -66,10 +66,10 @@ namespace Jellyfin.Plugin.KinopoiskWhiteList {
 
             var json = new JsonSerializerOptions { WriteIndented = true };
             _logger.LogInformation(JsonSerializer.Serialize(info, json));
-            _logger.LogInformation(JsonSerializer.Serialize(result, json));
+            // _logger.LogInformation(JsonSerializer.Serialize(result, json));
 
-            // return result;
-            return Task.FromResult(result);
+            return result;
+            // return Task.FromResult(result);
         }
     
         public Task<IEnumerable<RemoteSearchResult>>

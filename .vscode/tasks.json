@@ -1,16 +1,19 @@
 {
     "version": "2.0.0",
+    "options": {
+
+    },
     "tasks": [
         {
             "label": "build",
             "command": "dotnet",
             "type": "process",
             "options": {
-                "cwd": "${userHome}"
+                "cwd": "${userHome}",
             },
             "args": [
                 "build",
-                "${workspaceFolder}/Jellyfin.Plugin.KinopoiskWhiteList/Jellyfin.Plugin.KinopoiskWhiteList.csproj",
+                "${workspaceFolder}/Plugin/Plugin.csproj",
                 "--no-restore",
                 "-property:GenerateFullPaths=true",
                 "-consoleloggerparameters:NoSummary"
@@ -26,27 +29,25 @@
                 "panel": "dedicated",
                 "reveal": "never",
                 "revealProblems": "onProblem",
-                "clear": true,
-                "close": true,
             }
         },
         {
             "label": "install",
-            "command": "cp",
+            "command": "mkdir -p ${outputDir} && cp ${pluginDll} ${outputDir}",
             "type": "shell",
-            "options": { "cwd": "${userHome}" },
-            "args": [
-                "${workspaceFolder}/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhiteList.dll",
-                "/output/${workspaceFolderBasename}"
-            ],
+            "options": {
+                "cwd": "${userHome}",
+                "env": {
+                    "pluginDll": "${workspaceFolder}/Plugin/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhite.dll",
+                    "outputDir": "/output/Jellyfin.Plugin.KinopoiskWhite",
+                },
+            },
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "silent",
                 "focus": false,
                 "showReuseMessage": false,
-                "clear": true,
-                "close": true,
             }
         },
         {
@@ -61,7 +62,7 @@
                 "-consoleloggerparameters:NoSummary",
                 "build",
                 "--project",
-                "${workspaceFolder}/Jellyfin.Plugin.KinopoiskWhiteList/Jellyfin.Plugin.KinopoiskWhiteList.csproj",
+                "${workspaceFolder}/Plugin/Plugin.csproj",
                 "--no-restore"
             ],
             "group": {
@@ -72,9 +73,7 @@
                 "echo": false,
                 "reveal": "silent"
             },
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
+            // "runOptions": { "runOn": "folderOpen" }
         }
     ]
 }
