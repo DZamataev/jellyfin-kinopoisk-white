@@ -1,15 +1,12 @@
 {
     "version": "2.0.0",
-    "options": {
-
-    },
     "tasks": [
         {
             "label": "build",
             "command": "dotnet",
             "type": "process",
             "options": {
-                "cwd": "${userHome}",
+                "cwd": "${userHome}"
             },
             "args": [
                 "build",
@@ -28,7 +25,7 @@
                 "showReuseMessage": false,
                 "panel": "dedicated",
                 "reveal": "never",
-                "revealProblems": "onProblem",
+                "revealProblems": "onProblem"
             }
         },
         {
@@ -39,15 +36,15 @@
                 "cwd": "${userHome}",
                 "env": {
                     "pluginDll": "${workspaceFolder}/Plugin/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhite.dll",
-                    "outputDir": "/output/Jellyfin.Plugin.KinopoiskWhite",
-                },
+                    "outputDir": "/output/Jellyfin.Plugin.KinopoiskWhite"
+                }
             },
             "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "silent",
                 "focus": false,
-                "showReuseMessage": false,
+                "showReuseMessage": false
             }
         },
         {
@@ -55,7 +52,7 @@
             "command": "dotnet",
             "type": "process",
             "options": {
-                "cwd": "${userHome}",
+                "cwd": "${userHome}"
             },
             "args": [
                 "test",
@@ -73,29 +70,28 @@
                 "showReuseMessage": false,
                 "panel": "dedicated",
                 "reveal": "silent",
-                "revealProblems": "never",
+                "revealProblems": "never"
             }
         },
         {
-            "label": "watch",
+            "label": "restore",
             "command": "dotnet",
             "type": "process",
-            "options": { "cwd": "${userHome}" },
+            "options": {
+                "cwd": "${userHome}"
+            },
             "args": [
-                "watch",
-                "--no-hot-reload",
-                "-property:GenerateFullPaths=true",
-                "-consoleloggerparameters:NoSummary",
-                "build",
-                "--project",
-                "${workspaceFolder}/Plugin/Plugin.csproj",
-                "--no-restore"
+                "restore",
+                "${workspaceFolder}/Plugin"
             ],
             "presentation": {
                 "echo": false,
                 "reveal": "silent"
             },
-            // "runOptions": { "runOn": "folderOpen" }
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "problemMatcher": []
         }
     ]
 }
