@@ -59,7 +59,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             return reader.ReadToEnd();
         }
 
-        private async Task<string> Call(string operationName, object variables) {
+        public async Task<string> Call(string operationName, object variables) {
             var query = GetEmbeddedQuery(operationName);
             var request = new { operationName, variables, query };
             var json = JsonSerializer.Serialize(request);
@@ -70,24 +70,30 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             return await response.Content.ReadAsStringAsync();
         }
 
-        public async Task<ShortInfo> SuggestSearch(string keyword) {
+        public async Task<int?> SuggestSearch(Movie movie, string keyword) {
             var request = new {
                 keyword,
                 yandexCityId = 10777,
                 limit = 0
             };
             var result = await Call("SuggestSearch", request);
-            return result.GetShortInfo();
+            return movie.GetShortInfo(result);
         }
 
-        public async Task<ShortInfo> FilmBaseInfo(string keyword) {
+        public async Task FilmBaseInfo(Movie movie, int filmId) {
             var request = new {
-                keyword,
-                yandexCityId = 10777,
-                limit = 0
+                filmId,
+                isAuthorized = false,
+                actorsLimit = 10,
+                voiceOverActorsLimit = 0,
+                relatedMoviesLimit = 0,
+                checkSilentInvoiceAvailability = false,
+                withPurchaseOptions = false,
+                watchabilityLimit = 0,
+                socialArgumentLimit = 0,
             };
             var result = await Call("FilmBaseInfo", request);
-            return result.GetShortInfo();
+            movie.GetFullInfo(result);
         }
 
         public async Task<Movie> GetMovie(string path) {
@@ -102,16 +108,17 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
 
             string keyword = (year == null) ? title : $"{title} {year}";
 
-            ShortInfo shortInfo = await _queue.Enqueue(async () => {
-                return await SuggestSearch(keyword);
+            return await _queue.Enqueue(async () => {
+                var kid = await SuggestSearch(movie, keyword);
+                if (kid.HasValue) {
+                    await Task.Delay(100);
+                    try {
+                        await FilmBaseInfo(movie, kid.Value);
+                        await Task.Delay(100);
+                    } catch {}
+                }
+                return movie;
             });
-
-            movie.Name = shortInfo.Title;
-            movie.ProductionYear = shortInfo.ProductionYear;
-            // movie. = shortInfo.Rating;
-            // movie. = shortInfo.Poster;
-
-            return movie;
         }
     }
 }

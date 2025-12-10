@@ -42,7 +42,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             try {
                 result.Item = await api.GetMovie(Path.GetFileName(info.Path));
             } catch (Exception ex) {
-                _logger.LogError(ex, "Failed to load metadata {Path}", info);
+                _logger.LogError($"Failed to load metadata {info.Path}\n{ex}");
             }
 
             // можно убрать

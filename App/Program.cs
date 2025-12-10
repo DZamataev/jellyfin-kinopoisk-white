@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reflection;
+using System.Threading.Tasks;
+using MediaBrowser.Controller.Entities.Movies;
 
 namespace Jellyfin.Plugin.KinopoiskWhite {
     class Program {
@@ -21,34 +23,66 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             Console.WriteLine("Finished");
         }
 
+        async static Task FilmBaseInfo() {
+            var request = new {
+                filmId = 361,
+                isAuthorized = false,
+                actorsLimit = 10,
+                voiceOverActorsLimit = 0,
+                relatedMoviesLimit = 0,
+                checkSilentInvoiceAvailability = false,
+                withPurchaseOptions = false,
+                watchabilityLimit = 0,
+                socialArgumentLimit = 0,
+            };
+            var result = await Api.Instance.Call("FilmBaseInfo", request);
+            var movie = new Movie();
+            movie.GetFullInfo(result);
+
+            Console.WriteLine($"Result: {movie}");
+            // var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+            // Console.Write(System.Text.Json.JsonSerializer.Serialize(info, options));
+            DumpObject(movie);
+        }
+
         static async Task Main(string[] args) {
             Console.WriteLine("Started");
-
-            var variables = new {
-                keyword = "fight club",
-                yandexCityId = 10777,
-                limit = 0
-            };
-
-            var operationName = "SuggestSearch";
-            var query = Api.GetEmbeddedQuery(operationName);
-            var request = new { operationName, variables, query };
-
-            var json = System.Text.Json.JsonSerializer.Serialize(request);
-            var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-            var response = await Api.Instance._client.PostAsync("/graphql", content);
-            response.EnsureSuccessStatusCode();
-            var jsonString = await response.Content.ReadAsStringAsync();
-            // Console.WriteLine(jsonString);
-
-            var result = jsonString.GetShortInfo();
-
-            Console.WriteLine($"Result: {result}");
-            var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-            Console.Write(System.Text.Json.JsonSerializer.Serialize(result, options));
-            // Console.WriteLine(result.Data.Title);
+            var movie = await Api.Instance.GetMovie("Pulp.Fiction.1994.1080p.BrRip.x264.YIFY.mp4");
+            DumpObject(movie);
             Console.WriteLine("Finished");
+        }
+
+        public static void DumpObject(object obj)
+        {
+            if (obj == null)
+            {
+                Console.WriteLine("Object: null");
+                return;
+            }
+
+            Type type = obj.GetType();
+            Console.WriteLine($"Type: {type.FullName}");
+
+            foreach (PropertyInfo prop in type.GetProperties(
+                // BindingFlags.Public |
+                // BindingFlags.Instance |
+                // BindingFlags.DeclaredOnly
+                ))
+            {
+                try
+                {
+                    // Получаем значение
+                    object? value = prop.GetValue(obj);
+
+                    if (value == null) continue;
+
+                    Console.WriteLine($"{prop.Name}: {value}");
+                }
+                catch (Exception)
+                {
+                    // Console.WriteLine($"{prop.Name}: ERROR - {ex.GetType().Name}: {ex.Message}");
+                }
+            }
         }
     }
 }

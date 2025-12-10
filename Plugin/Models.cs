@@ -12,6 +12,20 @@ namespace Jellyfin.Plugin.KinopoiskWhite
         public int ProductionYear { get; set; }
     }
 
+    public class FullInfo : ShortInfo
+    {
+    }
+
+    public record FilmFull
+    {
+        public int Id { get; set; }
+        public string ContentId { get; set; }
+        public Title Title { get; set; }
+        public Rating Rating { get; set; }
+        public MovieGallery Gallery { get; set; }
+        public int ProductionYear { get; set; }
+    }
+
     public record Film
     {
         public int Id { get; set; }
