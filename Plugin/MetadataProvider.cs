@@ -39,7 +39,11 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 ResultLanguage = Constants.ProviderMetadataLanguage
             };
 
-            result.Item = await api.GetMovie(Path.GetFileName(info.Path));
+            try {
+                result.Item = await api.GetMovie(Path.GetFileName(info.Path));
+            } catch (Exception ex) {
+                _logger.LogError(ex, "Failed to load metadata {Path}", info);
+            }
 
             // можно убрать
             if (result.Item != null)

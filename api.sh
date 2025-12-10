@@ -2,7 +2,7 @@
 
 base="http://localhost:8096"
 token=13768c5f8e14451e934e3cd0a60af077
-plugin="КиноПоиск"
+plugin="КиноПоиск (белый список)"
 
 call() {
     headers=(
@@ -68,14 +68,14 @@ checkPlugin() {
     status=${info[1]}
     version=${info[2]}
 
-    id=${id:?"Plugin not found!"}
+    [ "$id" ] || {
+        get Plugins | jq .
+        echo "Plugin not found!";
+        exit 1
+    }
     echo Plugin $plugin: $status
     case $status in
         Active)
-            return 0
-            ;;
-        Restart)
-            return 1
             ;;
         Disabled)
             post "Plugins/$id/$version/Enable"
@@ -87,7 +87,7 @@ checkPlugin() {
     esac
 }
 
-restart
-checkPlugin || exit 1
+[ "$1" == "restart" ] && restart
+checkPlugin
 reload
 list
