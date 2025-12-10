@@ -2,6 +2,9 @@
     "name": "dotnet-dev-tools",
     "image": "mcr.microsoft.com/dotnet/sdk:8.0",
     "remoteUser": "app",
+    "env": {
+        "GIT_EDITOR": "code --wait"
+    },
     "customizations": {
         "vscode": {
             "settings": {

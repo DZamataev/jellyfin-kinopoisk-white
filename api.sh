@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 base="http://localhost:8096"
 token=13768c5f8e14451e934e3cd0a60af077

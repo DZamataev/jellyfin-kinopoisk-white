@@ -10,9 +10,12 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
     public class Api {
         private static readonly System.Lazy<Api> _instance = new System.Lazy<Api>(() => new Api());
         public static Api Instance => _instance.Value;
+
         public readonly HttpClient _client;
+        private readonly TaskQueue _queue;
 
         private Api() {
+            _queue = new TaskQueue();
             _client = new HttpClient();
             _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
             _client.DefaultRequestHeaders.Add("service-id", "25");
@@ -107,7 +110,10 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             };
 
             string keyword = (year == null) ? title : $"{title} {year}";
-            ShortInfo shortInfo = await SuggestSearch(keyword);
+
+            ShortInfo shortInfo = await _queue.Enqueue(async () => {
+                return await SuggestSearch(keyword);
+            });
 
             movie.Name = shortInfo.Title;
             movie.ProductionYear = shortInfo.ProductionYear;
