@@ -3,7 +3,8 @@ using Xunit;
 
 namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
     public class TransliterationTests {
-        [Theory(Skip = "disabled")]
+        [Theory]
+        // [Theory(Skip = "disabled")]
         [InlineData("Дурак_2014.avi", "Дурак", 2014)]
         [InlineData("Майор_2013_BDRip_1,45.avi", "Майор", 2013)]
         [InlineData("Завод_2018_WEB-DLRip.avi", "Завод", 2018)]
@@ -158,6 +159,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
         }
 
         [Theory]
+        // [Theory(Skip = "disabled")]
         [InlineData("fight club", 361, "Бойцовский клуб")]
         public async void ShouldGetShortInfo(string keyword, int exId, string exTitle) {
             ShortInfo info = await Api.Instance.SuggestSearch(keyword);
@@ -166,6 +168,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
         }
 
         [Theory]
+        // [Theory(Skip = "disabled")]
         [InlineData("/tmp/videos/Fight.Club.1999.1080p.BrRip.x264.YIFY.mp4", 361, "Бойцовский клуб")]
         public async void ShouldGetShortInfoFromPath(string path, int exId, string exTitle) {
             var (title, year) = Api.Instance.ParseFileName(path);
@@ -175,7 +178,8 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
             Assert.Equal(info.Title, exTitle);
         }
 
-        [Fact(Skip = "disabled")]
+        [Fact]
+        // [Fact(Skip = "disabled")]
         public async void ShouldReturnSomething() {
             var variables = new {
                 keyword = "fight club",
@@ -193,21 +197,10 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests {
             var response = await Api.Instance._client.PostAsync("/graphql", content);
             response.EnsureSuccessStatusCode();
             var jsonString = await response.Content.ReadAsStringAsync();
+            var result = jsonString.GetShortInfo();
 
-            var options = new System.Text.Json.JsonSerializerOptions {
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-            };
-            var result = System.Text.Json.JsonSerializer.Deserialize<GqlResponse<SuggestData>>(jsonString, options);
-
-            Assert.NotNull(result);
-            Assert.NotNull(result?.Data);
-            Assert.NotNull(result?.Data?.Suggest);
-            Assert.NotNull(result?.Data?.Suggest?.Top);
-            Assert.NotNull(result?.Data?.Suggest?.Top?.TopResult);
-            var top = result?.Data?.Suggest?.Top?.TopResult?.Global;
-            Assert.NotNull(top);
-
-            Assert.Equal("Бойцовский клуб", top.Title.Russian);
+            Assert.Equal("Бойцовский клуб", result.Title);
+            Assert.Equal("Fight Club", result.TitleOrig);
         }
     }
 }

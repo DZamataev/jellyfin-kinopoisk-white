@@ -59,7 +59,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             return reader.ReadToEnd();
         }
 
-        private async Task<T> Call<T>(string operationName, object variables) {
+        private async Task<string> Call(string operationName, object variables) {
             var query = GetEmbeddedQuery(operationName);
             var request = new { operationName, variables, query };
             var json = JsonSerializer.Serialize(request);
@@ -67,17 +67,7 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/graphql", data);
             response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-
-            var options = new JsonSerializerOptions {
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-            };
-            var result = JsonSerializer.Deserialize<GqlResponse<T>>(content, options);
-            if (result.Data == null) {
-                throw new System.Exception("Result data is null");
-            }
-
-            return result.Data;
+            return await response.Content.ReadAsStringAsync();
         }
 
         public async Task<ShortInfo> SuggestSearch(string keyword) {
@@ -86,17 +76,18 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
                 yandexCityId = 10777,
                 limit = 0
             };
-            var result = await Call<SuggestData>("SuggestSearch", request);
-            var top = result.Suggest.Top.TopResult.Global;
+            var result = await Call("SuggestSearch", request);
+            return result.GetShortInfo();
+        }
 
-            return new ShortInfo {
-                Id = top.Id,
-                Title = top.Title.Russian,
-                TitleOrig = top.Title.Original,
-                Rating = top.Rating.Kinopoisk.Value,
-                Poster = top.Gallery.Posters.HdVertical.AvatarsUrl,
-                ProductionYear = top.ProductionYear,
+        public async Task<ShortInfo> FilmBaseInfo(string keyword) {
+            var request = new {
+                keyword,
+                yandexCityId = 10777,
+                limit = 0
             };
+            var result = await Call("FilmBaseInfo", request);
+            return result.GetShortInfo();
         }
 
         public async Task<Movie> GetMovie(string path) {

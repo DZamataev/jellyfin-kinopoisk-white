@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
-namespace Jellyfin.Plugin.KinopoiskWhite {
+namespace Jellyfin.Plugin.KinopoiskWhite
+{
     public class ShortInfo
     {
         public int Id { get; set; }
@@ -11,44 +12,13 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
         public int ProductionYear { get; set; }
     }
 
-    public class GqlResponse<T>
-    {
-        public T Data { get; set; }
-    }
-
-    public class SuggestData
-    {
-        public SuggestTop Suggest { get; set; }
-    }
-
-    public class SuggestTop
-    {
-        public SuggestTopResult Top { get; set; }
-    }
-
-    public class SuggestTopResult
-    {
-        public SuggestResultGlobal TopResult { get; set; }
-        public List<SuggestResultMovie> Movies { get; set; }
-        public List<SuggestResultPerson> Persons { get; set; }
-        public List<object> Cinemas { get; set; }
-        public List<object> MovieLists { get; set; }
-    }
-
-    public class SuggestResultGlobal
-    {
-        public Film Global { get; set; }
-    }
-
-    public class Film
+    public record Film
     {
         public int Id { get; set; }
         public string ContentId { get; set; }
         public Title Title { get; set; }
         public Rating Rating { get; set; }
         public MovieGallery Gallery { get; set; }
-        public ViewOption ViewOption { get; set; }
-        public TicketOption TicketOption { get; set; }
         public int ProductionYear { get; set; }
     }
 
@@ -84,47 +54,5 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
     {
         public string AvatarsUrl { get; set; }
         public object FallbackUrl { get; set; }
-    }
-
-    public class ViewOption
-    {
-        public object ButtonText { get; set; }
-        public bool IsAvailableOnline { get; set; }
-        public string PurchasabilityStatus { get; set; }
-        public object ContentPackageToBuy { get; set; }
-        public object SubscriptionBadge { get; set; }
-        public object Type { get; set; }
-        public object AvailabilityAnnounce { get; set; }
-    }
-
-    public class TicketOption
-    {
-        public bool Purchasable { get; set; }
-        public ReleaseAnnounce ReleaseAnnounce { get; set; }
-    }
-
-    public class ReleaseAnnounce
-    {
-        public bool Available { get; set; }
-        public object ReleaseDate { get; set; }
-    }
-
-    public class SuggestResultMovie
-    {
-        public object Movie { get; set; }
-    }
-
-    public class SuggestResultPerson
-    {
-        public Person Person { get; set; }
-    }
-
-    public class Person
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string OriginalName { get; set; }
-        public string BirthDate { get; set; }
-        public Image Poster { get; set; }
     }
 }
