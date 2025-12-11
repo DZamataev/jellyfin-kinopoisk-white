@@ -2,83 +2,87 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
-using MediaBrowser.Model.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.KinopoiskWhite {
+namespace Jellyfin.Plugin.KinopoiskWhite;
 
-    public class MetadataProvider : IRemoteMetadataProvider<Movie, MovieInfo> {
+public class MetadataProvider : IRemoteMetadataProvider<Movie, MovieInfo>
+{
+    public string Name => Constants.ProviderName;
+    public string Description => Constants.ProviderDescription;
 
-        public string Name => Constants.ProviderName;
-        public string Description => Constants.ProviderDescription;
+    private readonly ILogger _logger;
+    private readonly Api api;
 
-        private readonly ILogger _logger;
-        private Api api;
+    public MetadataProvider(ILogger<MetadataProvider> logger)
+    {
+        _logger = logger;
+        api = Api.Instance;
+    }
 
-        public MetadataProvider(ILogger<MetadataProvider> logger) {
-            _logger = logger;
-            api = Api.Instance;
-        }
+    public async Task<MetadataResult<Movie>>
+    GetMetadata(MovieInfo info, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"GetMetadata {info.Name}");
 
-        public async Task<MetadataResult<Movie>>
-        GetMetadata(MovieInfo info, CancellationToken cancellationToken)
+        var result = new MetadataResult<Movie>()
         {
-            _logger.LogInformation($"GetMetadata {info.Name}");
+            QueriedById = true,
+            Provider = Constants.ProviderName,
+            ResultLanguage = Constants.ProviderMetadataLanguage
+        };
 
-            var result = new MetadataResult<Movie>() {
-                QueriedById = true,
-                Provider = Constants.ProviderName,
-                ResultLanguage = Constants.ProviderMetadataLanguage
-            };
-
-            try {
-                result.Item = await api.GetMovie(Path.GetFileName(info.Path));
-                result.HasMetadata = true;
-            } catch (Exception ex) {
-                _logger.LogError("Failed to load metadata: {Path}", info.Path);
-                _logger.LogDebug("{Message} {StackTrace}", ex.Message, ex.StackTrace);
-                return result;
-            }
-
+        try
+        {
+            result.Item = await api.GetMovie(Path.GetFileName(info.Path));
+            result.HasMetadata = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to load metadata: {Path}", info.Path);
+            _logger.LogDebug("{Message} {StackTrace}", ex.Message, ex.StackTrace);
             return result;
         }
-    
-        public Task<IEnumerable<RemoteSearchResult>>
-        GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken) {
-            _logger.LogInformation("GetSearchResults");
 
-            if (string.IsNullOrEmpty(searchInfo.Name)) {
-                _logger.LogError("GetSearchResults EMPTY");
-                return Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
+        return result;
+    }
+
+    public Task<IEnumerable<RemoteSearchResult>>
+    GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GetSearchResults");
+
+        if (string.IsNullOrEmpty(searchInfo.Name))
+        {
+            _logger.LogError("GetSearchResults EMPTY");
+            return Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
+        }
+
+        var results = new List<RemoteSearchResult> {
+            new() {
+                Name = searchInfo.Name,
+                ProductionYear = searchInfo.Year ?? 2033,
+                ProviderIds = new Dictionary<string, string> { { "TestProvider", $"test-{searchInfo.Name}" } }
             }
+        };
 
-            var results = new List<RemoteSearchResult> {
-                new RemoteSearchResult {
-                    Name = searchInfo.Name,
-                    ProductionYear = searchInfo.Year ?? 2033,
-                    ProviderIds = new Dictionary<string, string> { { "TestProvider", $"test-{searchInfo.Name}" } }
-                }
-            };
-        
-            return Task.FromResult<IEnumerable<RemoteSearchResult>>(results);
-        }
+        return Task.FromResult<IEnumerable<RemoteSearchResult>>(results);
+    }
 
-        public async Task<HttpResponseMessage>
-        GetImageResponse(string url, CancellationToken cancellationToken) {
-            using var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(url, cancellationToken);
+    public async Task<HttpResponseMessage>
+    GetImageResponse(string url, CancellationToken cancellationToken)
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetAsync(url, cancellationToken);
 
-            _logger.LogInformation("GetImageResponse");
+        _logger.LogInformation("GetImageResponse");
 
-            return response;
-        }
+        return response;
     }
 }
