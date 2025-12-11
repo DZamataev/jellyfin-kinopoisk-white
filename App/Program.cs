@@ -43,46 +43,12 @@ class Program {
         Console.WriteLine($"Result: {movie}");
         // var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
         // Console.Write(System.Text.Json.JsonSerializer.Serialize(info, options));
-        DumpObject(movie);
+        // DumpObject(movie);
     }
 
     static async Task Main(string[] args) {
         Console.WriteLine("Started");
-        var movie = await Api.Instance.GetMovie("Pulp.Fiction.1994.1080p.BrRip.x264.YIFY.mp4");
-        DumpObject(movie);
+        _ = await Api.Instance.GetMovie("Pulp.Fiction.1994.1080p.BrRip.x264.YIFY.mp4");
         Console.WriteLine("Finished");
-    }
-
-    public static void DumpObject(object obj)
-    {
-        if (obj == null)
-        {
-            Console.WriteLine("Object: null");
-            return;
-        }
-
-        Type type = obj.GetType();
-        Console.WriteLine($"Type: {type.FullName}");
-
-        foreach (PropertyInfo prop in type.GetProperties(
-            // BindingFlags.Public |
-            // BindingFlags.Instance |
-            // BindingFlags.DeclaredOnly
-            ))
-        {
-            try
-            {
-                // Получаем значение
-                object? value = prop.GetValue(obj);
-
-                if (value == null) continue;
-
-                Console.WriteLine($"{prop.Name}: {value}");
-            }
-            catch (Exception)
-            {
-                // Console.WriteLine($"{prop.Name}: ERROR - {ex.GetType().Name}: {ex.Message}");
-            }
-        }
     }
 }

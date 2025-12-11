@@ -128,12 +128,12 @@ public class Api
             if (kid.HasValue)
             {
                 await Task.Delay(100);
-                try
-                {
+                // try
+                // {
                     await FilmBaseInfo(movie, kid.Value);
                     await Task.Delay(100);
-                }
-                catch { }
+                // }
+                // catch { }
             }
             return movie;
         });

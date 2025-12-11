@@ -42,12 +42,12 @@ public class MetadataProvider : IRemoteMetadataProvider<Movie, MovieInfo>
         {
             result.Item = await api.GetMovie(Path.GetFileName(info.Path));
             result.HasMetadata = true;
+            _logger.LogInformation("Successfully load metadata: {Name}", result.Item.Name);
         }
         catch (Exception ex)
         {
             _logger.LogError("Failed to load metadata: {Path}", info.Path);
             _logger.LogDebug("{Message} {StackTrace}", ex.Message, ex.StackTrace);
-            return result;
         }
 
         return result;

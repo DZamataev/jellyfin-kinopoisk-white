@@ -5,6 +5,8 @@ namespace Jellyfin.Plugin.KinopoiskWhite.Tests;
 
 
 public class TransliterationTests {
+    [Theory]
+    // [Theory(Skip = "disabled")]
     [InlineData("Дурак_2014.avi", "Дурак", 2014)]
     [InlineData("Майор_2013_BDRip_1,45.avi", "Майор", 2013)]
     [InlineData("Завод_2018_WEB-DLRip.avi", "Завод", 2018)]
@@ -152,16 +154,14 @@ public class TransliterationTests {
     // [InlineData("Walk.the.Line.EXTENDED.2005.1080p.BrRip.x264.YIFY.mp4", "Walk the Line", 2005)]
     // [InlineData("Rock.n.Rolla.brrip.mkv", "Rock n Rolla", null)]
     // [InlineData("Бумер Фильм второй_745.avi", "Бумер Фильм второй", null)]
-    // [Theory]
-    [Theory(Skip = "disabled")]
     public void ShouldCleanupTitle(string text, string exTitle, int? exYear) {
         var (title, year) = Api.Instance.ParseFileName(text);
         Assert.Equal(exTitle, title);
         Assert.Equal(exYear, year);
     }
 
-    // [Theory]
-    [Theory(Skip = "disabled")]
+    [Theory]
+    // [Theory(Skip = "disabled")]
     [InlineData("fight club", /* 361, */ "Бойцовский клуб")]
     public async void ShouldGetShortInfo(string keyword, /* int exId, */ string exTitle) {
         var movie = new Movie();
