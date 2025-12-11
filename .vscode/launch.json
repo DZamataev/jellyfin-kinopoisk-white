@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "App",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/App/App.csproj"
+        }
+    ]
+}

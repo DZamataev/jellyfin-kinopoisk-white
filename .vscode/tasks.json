@@ -35,8 +35,8 @@
             "options": {
                 "cwd": "${userHome}",
                 "env": {
-                    "pluginDll": "${workspaceFolder}/Plugin/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhite.dll",
-                    "outputDir": "/output/Jellyfin.Plugin.KinopoiskWhite"
+                    "pluginDll": "${config:olasoft.pluginDll}",
+                    "outputDir": "${config:olasoft.outputDir}",
                 }
             },
             "problemMatcher": [],
@@ -77,20 +77,15 @@
             "label": "restore",
             "command": "dotnet",
             "type": "process",
-            "options": {
-                "cwd": "${userHome}"
-            },
-            "args": [
-                "restore",
-                "${workspaceFolder}/Plugin"
-            ],
+            "options": { "cwd": "${userHome}" },
+            "args": [ "restore", "${workspaceFolder}" ],
             "presentation": {
                 "echo": false,
-                "reveal": "silent"
+                "reveal": "silent",
+                "showReuseMessage": false,
+                "close": true
             },
-            "runOptions": {
-                "runOn": "folderOpen"
-            },
+            "runOptions": { "runOn": "folderOpen" },
             "problemMatcher": []
         }
     ]

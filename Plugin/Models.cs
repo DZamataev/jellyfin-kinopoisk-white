@@ -1,7 +1,22 @@
-using System.Collections.Generic;
+using Jellyfin.Data.Entities.Libraries;
+using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Providers;
 
 namespace Jellyfin.Plugin.KinopoiskWhite
 {
+    public class KinopoiskExternalId : IExternalId
+    {
+        public string ProviderName => Constants.ProviderName;
+        public string Key => Constants.ProviderId;
+        public string UrlFormatString => "https://www.kinopoisk.ru/film/{0}";
+        public ExternalIdMediaType? Type => null;
+        public bool Supports(IHasProviderIds item)
+        {
+            return item is Movie || item is Series;
+        }
+    }
+
     public class ShortInfo
     {
         public int Id { get; set; }

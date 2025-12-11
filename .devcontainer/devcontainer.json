@@ -1,18 +1,6 @@
 {
-    "name": "dotnet-dev-tools",
-    "image": "mcr.microsoft.com/dotnet/sdk:8.0",
-    "remoteUser": "app",
-    "env": {
-        "GIT_EDITOR": "code --wait"
-    },
-    "customizations": {
-        "vscode": {
-            "settings": {
-                "csharp.semanticHighlighting.enabled": true,
-                "files.eol": "\n"
-            }
-        }
-    },
+    "image": "vscode-dotnet:8.0",
+    "runArgs": [ "--hostname", "dev" ],
     "mounts": [
         {
             "type": "volume",

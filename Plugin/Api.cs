@@ -96,26 +96,30 @@ namespace Jellyfin.Plugin.KinopoiskWhite {
             movie.GetFullInfo(result);
         }
 
-        public async Task<Movie> GetMovie(string path) {
+        public async Task<Movie> GetMovie(string path)
+        {
             var (title, year) = ParseFileName(path);
-            var movie = new Movie {
+            var movie = new Movie
+            {
                 Id = System.Guid.NewGuid(),
-                DateCreated = System.DateTime.UtcNow,
                 Name = title,
                 ProductionYear = year,
-                Overview = "Test description с кириллицей",
             };
 
             string keyword = (year == null) ? title : $"{title} {year}";
 
-            return await _queue.Enqueue(async () => {
+            return await _queue.Enqueue(async () =>
+            {
                 var kid = await SuggestSearch(movie, keyword);
-                if (kid.HasValue) {
+                if (kid.HasValue)
+                {
                     await Task.Delay(100);
-                    try {
+                    try
+                    {
                         await FilmBaseInfo(movie, kid.Value);
                         await Task.Delay(100);
-                    } catch {}
+                    }
+                    catch { }
                 }
                 return movie;
             });
