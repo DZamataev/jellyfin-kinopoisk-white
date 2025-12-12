@@ -127,13 +127,7 @@ public class Api
             var kid = await SuggestSearch(movie, keyword);
             if (kid.HasValue)
             {
-                await Task.Delay(100);
-                // try
-                // {
-                    await FilmBaseInfo(movie, kid.Value);
-                    await Task.Delay(100);
-                // }
-                // catch { }
+                await FilmBaseInfo(movie, kid.Value);
             }
             return movie;
         });

@@ -31,37 +31,37 @@ public class TransliterationTests {
     [InlineData("Зелёный слоник.avi", "Зелёный слоник", null)]
     [InlineData("Хозяин_2025_WEB-DLRip-AVC.mkv", "Хозяин", 2025)]
     [InlineData("Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv", "Девушка в тумане", 2017)]
-    [InlineData("Бумер Фильм второй_745.avi", "Бумер Фильм второй", null)]
     [InlineData("Three.Billboards.Outside.Ebbing,.Missouri.2017.720p.BluRay.x264-[YTS.AM].mp4", "Three Billboards Outside Ebbing Missouri", 2017)]
+    [InlineData("28.Weeks.Later.2007.720p.BrRip.264.YIFY.mp4", "28 Weeks Later", 2007, 0)]
+    [InlineData("28.Days.Later.2002.720p.BrRip.264.YIFY.mp4", "28 Days Later", 2002, 0)]
+    [InlineData("28.Years.Later.2025.Proper.1080p.WEB-DL.DDP5.1.x265-NeoNoir.mkv", "28 Years Later", 2025, 0)]
+    [InlineData("Kill.Bill.Vol.1.2003.1080p.BrRIp.x264.YIFY.mp4", "Kill Bill Vol 1", 2003, 0)]
+    [InlineData("Mickey.17.2025.720p.WEBRip.x264.AAC-[YTS.MX].mp4", "Mickey 17", 2025, 0)]
+    [InlineData("Nobody.2.2025.DUB.WEB-DLRip-AVC.seleZen.mkv", "Nobody 2", 2025, 0)]
+    [InlineData("Terminator.2.1991.1080p.BluRay.x264-[YTS.AG].mp4", "Terminator 2", 1991, 0)]
+    [InlineData("Сайлент Хилл 2 (2012) BDRip-AVC [Open Matte].mkv", "Сайлент Хилл 2", 2012, 0)]
+    [InlineData("Brat_2_2000_WEB-DLRip_by_Dalemake.avi", "Brat 2", 2000, 0)]
+    [InlineData("2001.A.Space.Odyssey.1968.1080p.BluRay.x264-[YTS.AM].mp4", "2001 A Space Odyssey", 1968, 0)]
     // position = 1
+    [InlineData("Бумер Фильм второй_745.avi", "Бумер Фильм второй", null, 1)]
+    [InlineData("Blade.Runner.2054.mp4", "Blade Runner 2054", null, 1)]
     [InlineData("04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv", "Сумерки Сага Рассвет Часть 1", 2011, 1)]
-    [InlineData("Kill.Bill.Vol.1.2003.1080p.BrRIp.x264.YIFY.mp4", "Kill Bill Vol 1", 2003, 1)]
-    [InlineData("Mickey.17.2025.720p.WEBRip.x264.AAC-[YTS.MX].mp4", "Mickey 17", 2025, 1)]
-    [InlineData("Nobody.2.2025.DUB.WEB-DLRip-AVC.seleZen.mkv", "Nobody 2", 2025, 1)]
-    [InlineData("Terminator.2.1991.1080p.BluRay.x264-[YTS.AG].mp4", "Terminator 2", 1991, 1)]
-    [InlineData("28.Weeks.Later.2007.720p.BrRip.264.YIFY.mp4", "28 Weeks Later", 2007, 1)]
-    [InlineData("28.Days.Later.2002.720p.BrRip.264.YIFY.mp4", "28 Days Later", 2002, 1)]
-    [InlineData("28.Years.Later.2025.Proper.1080p.WEB-DL.DDP5.1.x265-NeoNoir.mkv", "28 Years Later", 2025, 1)]
-    [InlineData("Сайлент Хилл 2 (2012) BDRip-AVC [Open Matte].mkv", "Сайлент Хилл 2", 2012, 1)]
-    [InlineData("Brat_2_2000_WEB-DLRip_by_Dalemake.avi", "Brat 2", 2000, 1)]
     // position = 2
-    [InlineData("2001.A.Space.Odyssey.1968.1080p.BluRay.x264-[YTS.AM].mp4", "2001 A Space Odyssey", 1968, 2)]
-    [InlineData("Blade.Runner.2054.mp4", "Blade Runner 2054", null, 2)]
     // [InlineData("Walk.the.Line.EXTENDED.2005.1080p.BrRip.x264.YIFY.mp4", "Walk the Line", 2005)]
     // [InlineData("Rock.n.Rolla.brrip.mkv", "Rock n Rolla", null)]
-    public void ShouldGetListOfTitles(string path, string exTitle, int? exYear, int position = 0)
+    public void ShouldGetListOfTitles(string path, string exTitle, int? exYear, int exPosition = 0)
     {
         var list = path.ParseFileName();
 
-        for (var i = 0; i < list.Length; i++)
+        foreach (var item in list.Select((item, index) => (item, index)).ToList())
         {
-            var item = list[i];
-            if (item.Item1 == exTitle && item.Item2 == exYear) {
-                Assert.Equal(position, i);
+            var ((title, year), position) = item;
+            if (title == exTitle && year == exYear) {
+                Assert.Equal(exPosition, position);
                 return;
             }
-            System.Diagnostics.Debug.WriteLine($"{item.Item1}");
-        }
+            System.Diagnostics.Debug.WriteLine($"{title}");
+        };
 
         Assert.Fail($"Not found expected value {exTitle} ({exYear})");
     }

@@ -24,25 +24,13 @@ public static partial class Extensions
     [GeneratedRegex(@"((?:19|20)\d{2})")]
     private static partial Regex ByYear();
 
-    public static (string, int?)[] ParseFileName(this string path)
+    public static List<(string, int?)> ParseFileName(this string path)
     {
         var fileName = System.IO.Path.GetFileName(path);
         var byYear = ByYear();
         var parts = byYear.Split(fileName);
 
-        var result = new HashSet<(string, int?)>();
-
-        void push(string title, int? year)
-        {
-            title = AllButWords().Replace(title, " ").Trim();
-            result.Add((title, year));
-
-            title = LeadingDigits().Replace(title, "").Trim();
-            result.Add((title, year));
-
-            title = TrailingDigits().Replace(title, "").Trim();
-            result.Add((title, year));
-        }
+        var set = new HashSet<(string, int?)>();
 
         for (int index = parts.Length - 1; index >= 0; index--)
         {
@@ -50,13 +38,35 @@ public static partial class Extensions
 
             var title = string.Join(" ", parts.Take(index));
             int year = int.Parse(parts[index]);
-            push(title, year);
+            set.Add((title, year));
         }
 
         var fullName = FileExtension().Replace(fileName, "");
-        push(fullName, null);
+        set.Add((fullName, null));
 
-        return [.. result.OrderBy(x => x.Item1.Length)];
+        var ordered = set.OrderBy(x => x.Item1.Length).ThenBy(x => x.Item2 != null);
+        return ordered.Aggregate(
+            new List<(string, int?)>(),
+            (result, item) =>
+        {
+            var (title, year) = item;
+
+            title = AllButWords().Replace(title, " ").Trim();
+            if (title == string.Empty) return result;
+
+            if (!result.Contains((title, year)))
+                result.Add((title, year));
+
+            title = LeadingDigits().Replace(title, "").Trim();
+            if (!result.Contains((title, year)))
+                result.Add((title, year));
+
+            title = TrailingDigits().Replace(title, "").Trim();
+            if (!result.Contains((title, year)))
+                result.Add((title, year));
+
+            return result;
+        });
     }
 
     public static int GetShortInfo(this Movie movie, string jsonString)
@@ -77,7 +87,6 @@ public static partial class Extensions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
-
         var film = JsonSerializer.Deserialize<Film>(root, options);
         film.Fill(movie);
         return film.Id;
@@ -98,7 +107,6 @@ public static partial class Extensions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
-
         JsonSerializer.Deserialize<Film>(root, options).Fill(movie);
     }
 }
