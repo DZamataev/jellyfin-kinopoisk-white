@@ -52,7 +52,7 @@ public class KinopoiskApi
         
         if (film != null)
         {
-            film.Fill(itemResult.Item);
+            film.Fill(itemResult);
             return;
         }
 

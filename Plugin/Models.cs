@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Jellyfin.Data.Entities.Libraries;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -44,7 +45,7 @@ public record Film
     public FilmPremiere WorldPremiere { get; set; }
     public FilmRestriction Restriction { get; set; }
 
-    public void Fill(BaseItem target)
+    private void Fill(BaseItem target)
     {
         target.SetProviderId(Constants.ProviderId, System.Convert.ToString(Id));
         target.Name = Title.Russian;
@@ -60,8 +61,25 @@ public record Film
         foreach (var genre in Genres)
             target.AddGenre(genre.Slug);
 
-        // foreach (var person in Actors.Items)
-        //     movie.AddPerson();
+        return;
+    }
+
+    public void Fill<T>(MetadataResult<T> target) where T : BaseItem
+    {
+        Fill(target.Item);
+
+        void AddPerson(PersonKind Type, FilmCrewMembers.FilmCrewMember Crew)
+        {
+            if (Crew?.Person?.Name == null) return;
+            target.AddPerson(new PersonInfo { Name = Crew.Person.Name, Type = Type });
+        }
+
+        foreach (var person in Actors.Items) AddPerson(PersonKind.Actor, person);
+        foreach (var person in Directors.Items) AddPerson(PersonKind.Director, person);
+        foreach (var person in Writers.Items) AddPerson(PersonKind.Writer, person);
+        foreach (var person in Producers.Items) AddPerson(PersonKind.Producer, person);
+        foreach (var person in Composers.Items) AddPerson(PersonKind.Composer, person);
+        foreach (var person in FilmEditors.Items) AddPerson(PersonKind.Editor, person);
 
         return;
     }

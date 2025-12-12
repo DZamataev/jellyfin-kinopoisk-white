@@ -29,12 +29,13 @@ class Program {
     static async Task Main(string[] args) {
         Prepare();
         Console.WriteLine("Started");
-        "Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv".ParseFileName();
-        "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv".ParseFileName();
+        // "Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv".ParseFileName();
+        // "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv".ParseFileName();
+        "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4".ParseFileName();
 
         var info = new MovieInfo
         {
-            Path = "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv"
+            Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
         };
         var kid = await _api.GetKinopoiskId(info, CancellationToken.None);
         Console.WriteLine("Finished");

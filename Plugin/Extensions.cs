@@ -39,6 +39,8 @@ public static partial class Extensions
             var title = string.Join(" ", parts.Take(index));
             int year = int.Parse(parts[index]);
             set.Add((title, year));
+
+            set.Add((title, null));
         }
 
         var fullName = FileExtension().Replace(fileName, "");
