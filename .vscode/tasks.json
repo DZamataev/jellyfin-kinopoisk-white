@@ -1,25 +1,32 @@
 {
     "version": "2.0.0",
+    // "inputs": [
+    //     {
+    //         "id": "Folder",
+    //         "type": "pickString",
+    //         "options": [ "", "App", "Plugin", "Test" ],
+    //         "default": "",
+    //         "description": "Select folder to build"
+    //     }
+    // ],
     "tasks": [
         {
             "label": "build",
             "command": "dotnet",
             "type": "process",
-            "options": {
-                "cwd": "${userHome}"
-            },
+            // "options": { "cwd": "${workspaceFolder}/${input:Folder}" },
+            "options": { "cwd": "${workspaceFolder}" },
             "args": [
                 "build",
-                "${workspaceFolder}/Plugin/Plugin.csproj",
                 "--no-restore",
                 "-property:GenerateFullPaths=true",
                 "-consoleloggerparameters:NoSummary"
             ],
+            "problemMatcher": "$msCompile",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": "$msCompile",
             "presentation": {
                 "echo": false,
                 "showReuseMessage": false,
@@ -36,7 +43,7 @@
                 "cwd": "${userHome}",
                 "env": {
                     "pluginDll": "${config:olasoft.pluginDll}",
-                    "outputDir": "${config:olasoft.outputDir}",
+                    "outputDir": "${config:olasoft.outputDir}"
                 }
             },
             "problemMatcher": [],
@@ -85,7 +92,9 @@
                 "showReuseMessage": false,
                 "close": true
             },
-            "runOptions": { "runOn": "folderOpen" },
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
             "problemMatcher": []
         }
     ]

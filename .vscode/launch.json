@@ -3,9 +3,11 @@
     "configurations": [
         {
             "name": "App",
-            "type": "dotnet",
+            "type": "coreclr",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/App/App.csproj"
+            "program": "${workspaceFolder}/App/bin/Debug/net8.0/App.dll",
+            "justMyCode": false,
+            "preLaunchTask": "build",
         }
     ]
 }
