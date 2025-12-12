@@ -13,6 +13,8 @@ using System.Net.Http;
 
 namespace Jellyfin.Plugin.KinopoiskWhite;
 
+using Api;
+
 public class Plugin : BasePlugin<PluginConfiguration>
 {
     public static Plugin Instance { get; private set; }
@@ -36,7 +38,12 @@ public class KinopoiskPluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
+        serviceCollection.AddSingleton((sp) => new GraphQL(
+            sp.GetRequiredService<ILogger<GraphQL>>(),
+            sp.GetRequiredService<IHttpClientFactory>()
+        ));
         serviceCollection.AddSingleton((sp) => new KinopoiskApi(
+            sp.GetRequiredService<GraphQL>(),
             sp.GetRequiredService<ILogger<KinopoiskApi>>(),
             sp.GetRequiredService<IHttpClientFactory>()
         ));

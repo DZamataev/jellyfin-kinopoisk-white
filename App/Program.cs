@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KinopoiskWhite; 
 
+using Api;
+using Extensions;
+
 class Program {
     private static KinopoiskApi _api;
     
@@ -14,6 +17,10 @@ class Program {
         var sp = services.BuildServiceProvider();
 
         _api = new KinopoiskApi(
+            new GraphQL(
+                sp.GetRequiredService<ILogger<GraphQL>>(),
+                sp.GetRequiredService<IHttpClientFactory>()
+            ),
             sp.GetRequiredService<ILogger<KinopoiskApi>>(),
             sp.GetRequiredService<IHttpClientFactory>()
         );

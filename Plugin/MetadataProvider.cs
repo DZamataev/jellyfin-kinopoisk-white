@@ -9,12 +9,10 @@ using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Library;
-using System.Text.Json;
-using MediaBrowser.Model.IO;
-using MediaBrowser.Controller.Configuration;
 
 namespace Jellyfin.Plugin.KinopoiskWhite;
+
+using Api;
 
 public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 {

@@ -6,6 +6,8 @@ using System.Net.Http;
 
 namespace Jellyfin.Plugin.KinopoiskWhite.Tests; 
 
+using Api;
+using Extensions;
 
 public class TransliterationTests {
     private KinopoiskApi _api;
@@ -16,6 +18,10 @@ public class TransliterationTests {
         var sp = services.BuildServiceProvider();
 
         _api = new KinopoiskApi(
+            new GraphQL(
+                sp.GetRequiredService<ILogger<GraphQL>>(),
+                sp.GetRequiredService<IHttpClientFactory>()
+            ),
             sp.GetRequiredService<ILogger<KinopoiskApi>>(),
             sp.GetRequiredService<IHttpClientFactory>()
         );
