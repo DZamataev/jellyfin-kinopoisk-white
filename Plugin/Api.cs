@@ -1,64 +1,40 @@
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Providers;
+using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KinopoiskWhite;
 
 
-public class Api
+public class KinopoiskApi
 {
-    private static readonly System.Lazy<Api> _instance = new System.Lazy<Api>(() => new Api());
-    public static Api Instance => _instance.Value;
-
     public readonly HttpClient _client;
     private readonly TaskQueue _queue;
+    private readonly ILogger _logger;
+    private readonly JsonSerializerOptions _jsonOptions;
 
-    private Api()
+    public KinopoiskApi(ILogger<KinopoiskApi> logger, IHttpClientFactory httpClientFactory)
     {
         _queue = new TaskQueue();
-        _client = new HttpClient();
+
+        _logger = logger;
+
+        _client = httpClientFactory.CreateClient();
         _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
         _client.DefaultRequestHeaders.Add("service-id", "25");
-    }
 
-    public (string, int?) ParseFileName(string path)
-    {
-        var fileName = Path.GetFileName(path);
-        var parts = Regex.Split(fileName, @"((?:19|20)\d{2})");
-
-        int drop = parts.Length;
-        int? year = null;
-
-        for (int i = parts.Length - 1; i >= 0; i--)
-        {
-            drop--;
-            if (Regex.IsMatch(parts[i], @"^\d{4}$"))
-            {
-                year = int.Parse(parts[i]);
-                break;
-            }
-        }
-
-        var result = string.Join(" ", parts.Take(drop));
-
-        // no match
-        if (string.IsNullOrEmpty(result))
-        {
-            result = Regex.Replace(fileName, @"\.\w+$", "");
-        }
-        // cleanup
-        result = Regex.Replace(result, @"[^\w]+|[_\s]", " ").Trim();
-
-        return (result, year);
+        _jsonOptions = new JsonSerializerOptions {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
     }
 
     public static string GetEmbeddedQuery(string fileName)
     {
-        var assembly = typeof(Api).Assembly;
+        var assembly = typeof(KinopoiskApi).Assembly;
         var resourceName = $"Plugin.GraphQL.{fileName}.gql";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
@@ -68,68 +44,120 @@ public class Api
         return reader.ReadToEnd();
     }
 
-    public async Task<string> Call(string operationName, object variables)
+    public async Task<string> Call(string operationName, object variables, CancellationToken cancellationToken)
     {
         var query = GetEmbeddedQuery(operationName);
         var request = new { operationName, variables, query };
         var json = JsonSerializer.Serialize(request);
 
         var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync("/graphql", data);
+        var response = await _client.PostAsync("/graphql", data, cancellationToken)
+                .ConfigureAwait(false);
+
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
     }
 
-    public async Task<int?> SuggestSearch(Movie movie, string keyword)
+    public async Task<Film> SuggestSearch(string keyword, CancellationToken cancellationToken)
     {
-        var request = new
+        try
         {
-            keyword,
-            yandexCityId = 10777,
-            limit = 0
-        };
-        var result = await Call("SuggestSearch", request);
-        return movie.GetShortInfo(result);
+            var result = await Call("SuggestSearch", new { keyword }, cancellationToken)
+                .ConfigureAwait(false);
+
+            using var doc = JsonDocument.Parse(result);
+            var root = doc.RootElement
+                .GetProperty("data")
+                .GetProperty("suggest")
+                .GetProperty("top")
+                .GetProperty("topResult")
+                .GetProperty("global");
+
+            var film = JsonSerializer.Deserialize<Film>(root, _jsonOptions);
+            _logger.LogInformation("SuggestSearch [{keyword}] found KID {kid}.", keyword, film.Id);
+            return film;
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogDebug("SuggestSearch [{keyword}] not found.", keyword);
+            _logger.LogTrace(ex, "Suggest Search");
+        }
+        return null;
     }
 
-    public async Task FilmBaseInfo(Movie movie, int filmId)
+    public async Task<string> GetKinopoiskId(ItemLookupInfo info, CancellationToken cancellationToken)
     {
-        var request = new
+        var keywords = info.Path.ParseFileName();
+
+        foreach (var (title, year) in keywords)
         {
-            filmId,
-            isAuthorized = false,
-            actorsLimit = 10,
-            voiceOverActorsLimit = 0,
-            relatedMoviesLimit = 0,
-            checkSilentInvoiceAvailability = false,
-            withPurchaseOptions = false,
-            watchabilityLimit = 0,
-            socialArgumentLimit = 0,
-        };
-        var result = await Call("FilmBaseInfo", request);
-        movie.GetFullInfo(result);
+            string keyword = (year == null) ? title : $"{title} {year}";
+
+            var film = await _queue.Enqueue(async () =>
+                await SuggestSearch(keyword, cancellationToken)
+            ).ConfigureAwait(false);
+
+            if (film?.Id != null)
+                return System.Convert.ToString(film.Id);
+        }
+        throw new System.Exception($"Get Kinopoisk Id failed [{info.Name}].\n{keywords}");
     }
 
-    public async Task<Movie> GetMovie(string path)
+    public async Task<Film> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
     {
-        var (title, year) = ParseFileName(path);
-        var movie = new Movie
+        try
         {
-            Id = System.Guid.NewGuid(),
-            Name = title,
-            ProductionYear = year,
-        };
+            var request = new {
+                filmId,
+                isAuthorized = false,
+                actorsLimit = 10,
+                voiceOverActorsLimit = 0,
+                relatedMoviesLimit = 0,
+                checkSilentInvoiceAvailability = false,
+                withPurchaseOptions = false,
+                watchabilityLimit = 0,
+                socialArgumentLimit = 0,
+            };
+            var result = await Call("FilmBaseInfo", request, cancellationToken);
 
-        string keyword = (year == null) ? title : $"{title} {year}";
+            using var doc = JsonDocument.Parse(result);
 
-        return await _queue.Enqueue(async () =>
+            if (doc.RootElement.ValueKind == JsonValueKind.Null)
+                throw new System.Exception("Document is null");
+
+            var root = doc.RootElement
+                .GetProperty("data")
+                .GetProperty("film");
+
+            var film = JsonSerializer.Deserialize<Film>(root, _jsonOptions);
+            _logger.LogInformation("FilmBaseInfo for KID {kid} loaded.", filmId);
+            return film;
+        }
+        catch (System.Exception)
         {
-            var kid = await SuggestSearch(movie, keyword);
-            if (kid.HasValue)
-            {
-                await FilmBaseInfo(movie, kid.Value);
-            }
-            return movie;
-        });
+            _logger.LogDebug("FilmBaseInfo KID {kid} not found.", filmId);
+        }
+        return null;
+    }
+
+    public async Task Fetch<T>(MetadataResult<T> itemResult, string kinopoiskId, string language, string country, CancellationToken cancellationToken)
+            where T : BaseItem
+    {
+        if (string.IsNullOrWhiteSpace(kinopoiskId))
+        {
+            throw new System.ArgumentNullException(nameof(kinopoiskId));
+        }
+
+        var kid = System.Convert.ToInt32(kinopoiskId);
+        var film = await _queue.Enqueue(async () => await FilmBaseInfo(kid, cancellationToken));
+        
+        if (film != null)
+        {
+            film.Fill(itemResult.Item);
+            return;
+        }
+
+        throw new System.Exception(
+            $"Get Kinopoisk metadata failed KID {kinopoiskId} [{itemResult.Item.Name}].");
     }
 }

@@ -1,29 +1,24 @@
 using Xunit;
-using MediaBrowser.Controller.Entities.Movies;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
 namespace Jellyfin.Plugin.KinopoiskWhite.Tests; 
 
 
 public class TransliterationTests {
-    [Theory(Skip = "disabled")]
-    [InlineData("fight club", /* 361, */ "Бойцовский клуб")]
-    public async void ShouldGetShortInfo(string keyword, /* int exId, */ string exTitle) {
-        var movie = new Movie();
-        await Api.Instance.SuggestSearch(movie, keyword);
-        // Assert.Equal(info.Id, exId);
-        Assert.Equal(movie.Name, exTitle);
-    }
+    private KinopoiskApi _api;
+    public TransliterationTests()
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient();
+        var sp = services.BuildServiceProvider();
 
-    [Theory(Skip = "disabled")]
-    [InlineData("/tmp/videos/Fight.Club.1999.1080p.BrRip.x264.YIFY.mp4", /* 361, */ "Бойцовский клуб")]
-    public async void ShouldGetShortInfoFromPath(string path, /* int exId, */ string exTitle) {
-        var (title, year) = Api.Instance.ParseFileName(path);
-        var keyword = $"{title} {year}";
-        var movie = new Movie();
-        await Api.Instance.SuggestSearch(movie, keyword);
-        // Assert.Equal(info.Id, exId);
-        Assert.Equal(movie.Name, exTitle);
+        _api = new KinopoiskApi(
+            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
+            sp.GetRequiredService<IHttpClientFactory>()
+        );
     }
 
     [Theory]

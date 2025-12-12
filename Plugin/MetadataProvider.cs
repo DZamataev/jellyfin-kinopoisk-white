@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -9,45 +7,70 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Model.Providers;
 using Microsoft.Extensions.Logging;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Library;
+using System.Text.Json;
+using MediaBrowser.Model.IO;
+using MediaBrowser.Controller.Configuration;
 
 namespace Jellyfin.Plugin.KinopoiskWhite;
 
-public class MetadataProvider : IRemoteMetadataProvider<Movie, MovieInfo>
+public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 {
     public string Name => Constants.ProviderName;
-    public string Description => Constants.ProviderDescription;
+    public static string Description => Constants.ProviderDescription;
 
+    // private readonly IHttpClientFactory _httpClientFactory;
+    // private readonly ILibraryManager _libraryManager;
     private readonly ILogger _logger;
-    private readonly Api api;
+    private readonly KinopoiskApi _api;
 
-    public MetadataProvider(ILogger<MetadataProvider> logger)
+    public KinopoiskItemProvider(
+        // IHttpClientFactory httpClientFactory,
+        // ILibraryManager libraryManager,
+        ILogger<KinopoiskItemProvider> logger,
+        KinopoiskApi api
+        )
     {
+        // _httpClientFactory = httpClientFactory;
+        // _libraryManager = libraryManager;
         _logger = logger;
-        api = Api.Instance;
+        _api = api;
     }
 
-    public async Task<MetadataResult<Movie>>
-    GetMetadata(MovieInfo info, CancellationToken cancellationToken)
+    public Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken cancellationToken)
     {
-        _logger.LogInformation($"GetMetadata {info.Name}");
+        return GetResult<Movie>(info, cancellationToken);
+    }
 
-        var result = new MetadataResult<Movie>()
+    private async Task<MetadataResult<T>> GetResult<T>(ItemLookupInfo info, CancellationToken cancellationToken)
+    where T : BaseItem, new()
+    {
+        var result = new MetadataResult<T>
         {
+            Item = new T(),
             QueriedById = true,
             Provider = Constants.ProviderName,
-            ResultLanguage = Constants.ProviderMetadataLanguage
+            ResultLanguage = Constants.ProviderMetadataLanguage,
         };
 
-        try
+        var kinopoiskId = info.GetProviderId(Constants.ProviderName);
+        if (string.IsNullOrWhiteSpace(kinopoiskId))
         {
-            result.Item = await api.GetMovie(Path.GetFileName(info.Path));
-            result.HasMetadata = true;
-            _logger.LogInformation("Successfully load metadata: {Name}", result.Item.Name);
+            kinopoiskId = await _api.GetKinopoiskId(info, cancellationToken)
+                .ConfigureAwait(false);
+            result.QueriedById = false;
         }
-        catch (Exception ex)
+
+        if (!string.IsNullOrEmpty(kinopoiskId))
         {
-            _logger.LogError("Failed to load metadata: {Path}", info.Path);
-            _logger.LogDebug("{Message} {StackTrace}", ex.Message, ex.StackTrace);
+            result.Item.SetProviderId(Constants.ProviderName, kinopoiskId);
+            result.HasMetadata = true;
+
+            await _api.Fetch(
+                result, kinopoiskId, info.MetadataLanguage, info.MetadataCountryCode, cancellationToken
+            ).ConfigureAwait(false);
         }
 
         return result;

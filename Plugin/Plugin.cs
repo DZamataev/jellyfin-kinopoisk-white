@@ -5,10 +5,11 @@ using MediaBrowser.Common.Plugins;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
 
 namespace Jellyfin.Plugin.KinopoiskWhite;
 
@@ -35,6 +36,10 @@ public class KinopoiskPluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MetadataProvider>();
+        serviceCollection.AddSingleton((sp) => new KinopoiskApi(
+            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
+            sp.GetRequiredService<IHttpClientFactory>()
+        ));
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, KinopoiskItemProvider>();
     }
 }

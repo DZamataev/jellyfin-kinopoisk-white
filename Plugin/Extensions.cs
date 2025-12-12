@@ -24,7 +24,7 @@ public static partial class Extensions
     [GeneratedRegex(@"((?:19|20)\d{2})")]
     private static partial Regex ByYear();
 
-    public static List<(string, int?)> ParseFileName(this string path)
+    public static (string, int?)[] ParseFileName(this string path)
     {
         var fileName = System.IO.Path.GetFileName(path);
         var byYear = ByYear();
@@ -45,7 +45,7 @@ public static partial class Extensions
         set.Add((fullName, null));
 
         var ordered = set.OrderBy(x => x.Item1.Length).ThenBy(x => x.Item2 != null);
-        return ordered.Aggregate(
+        var result = ordered.Aggregate(
             new List<(string, int?)>(),
             (result, item) =>
         {
@@ -67,46 +67,7 @@ public static partial class Extensions
 
             return result;
         });
-    }
 
-    public static int GetShortInfo(this Movie movie, string jsonString)
-    {
-        using var doc = JsonDocument.Parse(jsonString);
-
-        if (doc.RootElement.ValueKind == JsonValueKind.Null)
-            throw new System.Exception("Document is null");
-
-        var root = doc.RootElement
-            .GetProperty("data")
-            .GetProperty("suggest")
-            .GetProperty("top")
-            .GetProperty("topResult")
-            .GetProperty("global");
-
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-        var film = JsonSerializer.Deserialize<Film>(root, options);
-        film.Fill(movie);
-        return film.Id;
-    }
-
-    public static void GetFullInfo(this Movie movie, string jsonString)
-    {
-        using var doc = JsonDocument.Parse(jsonString);
-
-        if (doc.RootElement.ValueKind == JsonValueKind.Null)
-            throw new System.Exception("Document is null");
-
-        var root = doc.RootElement
-            .GetProperty("data")
-            .GetProperty("film");
-
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-        JsonSerializer.Deserialize<Film>(root, options).Fill(movie);
+        return [.. result];
     }
 }

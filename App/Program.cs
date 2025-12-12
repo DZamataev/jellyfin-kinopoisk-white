@@ -1,54 +1,35 @@
-﻿using System.Reflection;
-using System.Threading.Tasks;
-using MediaBrowser.Controller.Entities.Movies;
+﻿using MediaBrowser.Controller.Providers;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.KinopoiskWhite; 
 
 class Program {
-    void checkQueue() {
-        var queue = new TaskQueue();
-        List<Task> tasks = [];
-        for (var i = 0; i < 10; i++) {
-            var value = i;
-            var j = Task.Run(async () => {
-                var result = await queue.Enqueue(async () => {
-                    await Task.Delay(250);
-                    return value;
-                });
-                Console.WriteLine($"Result: {result}");
-            });
-            tasks.Add(j);
-        }
-        
-        Task.WaitAll(tasks.ToArray());
-        Console.WriteLine("Finished");
-    }
+    private static KinopoiskApi _api;
+    
+    private static void Prepare()
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient();
+        var sp = services.BuildServiceProvider();
 
-    async static Task FilmBaseInfo() {
-        var request = new {
-            filmId = 361,
-            isAuthorized = false,
-            actorsLimit = 10,
-            voiceOverActorsLimit = 0,
-            relatedMoviesLimit = 0,
-            checkSilentInvoiceAvailability = false,
-            withPurchaseOptions = false,
-            watchabilityLimit = 0,
-            socialArgumentLimit = 0,
-        };
-        var result = await Api.Instance.Call("FilmBaseInfo", request);
-        var movie = new Movie();
-        movie.GetFullInfo(result);
-
-        Console.WriteLine($"Result: {movie}");
-        // var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-        // Console.Write(System.Text.Json.JsonSerializer.Serialize(info, options));
-        // DumpObject(movie);
+        _api = new KinopoiskApi(
+            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
+            sp.GetRequiredService<IHttpClientFactory>()
+        );
     }
 
     static async Task Main(string[] args) {
+        Prepare();
         Console.WriteLine("Started");
-        _ = await Api.Instance.GetMovie("Pulp.Fiction.1994.1080p.BrRip.x264.YIFY.mp4");
+        "Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv".ParseFileName();
+        "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv".ParseFileName();
+
+        var info = new MovieInfo
+        {
+            Path = "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv"
+        };
+        var kid = await _api.GetKinopoiskId(info, CancellationToken.None);
         Console.WriteLine("Finished");
     }
 }

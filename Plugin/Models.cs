@@ -52,7 +52,7 @@ public record Film
         target.ProductionYear = ProductionYear;
         target.CommunityRating = Rating.Community;
         target.CriticRating = Rating.Critics;
-        target.CustomRating = Restriction?.Mpaa ?? "";
+        target.CustomRating = Restriction?.Mpaa?.ToUpper() ?? "";
 
         target.Tagline = ShortDescription;
         target.Overview = Synopsis;
