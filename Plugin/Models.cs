@@ -53,7 +53,7 @@ public record Film
         target.ProductionYear = ProductionYear;
         target.CommunityRating = Rating.Community;
         target.CriticRating = Rating.Critics;
-        target.CustomRating = Restriction?.Mpaa?.ToUpper() ?? "";
+        target.CustomRating = Restriction?.Rating;
 
         target.Tagline = ShortDescription;
         target.Overview = Synopsis;
@@ -86,20 +86,32 @@ public record Film
 
     public class FilmTitle
     {
-        public string Russian { get; set; }
-        public string Original { get; set; }
+        public string Russian { get; set; } = "";
+        public string Original { get; set; } = "";
     }
 
     public class Genre
     {
-        public string Name { get; set; }
-        public string Slug { get; set; }
+        public string Name { get; set; } = "";
+        public string Slug { get; set; } = "";
     }
 
     public class FilmRestriction
     {
-        public string Age { get; set; }
-        public string Mpaa { get; set; }
+        public string Age { get; set; } = "";
+        public string Mpaa { get; set; } = "";
+
+        public string Rating
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Mpaa))
+                    return Mpaa?.ToUpper();
+                if (string.IsNullOrEmpty(Age))
+                    return Age;
+                return "Unrated";
+            }
+        }
     }
 
     public class FilmRating
@@ -110,12 +122,12 @@ public record Film
         public RatingWithVotesValue WorldwideCritics { get; set; }
         public RatingValue ReviewCount { get; set; }
 
-        public float Community => System.Convert.ToSingle(Imdb?.Value ?? Kinopoisk?.Value ?? 0);
-        public float Critics => System.Convert.ToSingle(
-            WorldwideCritics?.Value ?? RussianCritics?.Value ?? 0
+        public float Community => System.Convert.ToSingle(
+            Imdb?.Value ?? Kinopoisk?.Value ?? 0
         );
-        public string Custom => System.Convert.ToString(ReviewCount?.Count);
-
+        public float Critics => System.Convert.ToSingle(
+            WorldwideCritics?.Percent ?? 0
+        );
         public class RatingValue
         {
             public double? Value { get; set; }
