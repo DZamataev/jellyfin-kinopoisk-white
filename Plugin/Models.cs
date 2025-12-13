@@ -8,7 +8,7 @@ using MediaBrowser.Model.Providers;
 
 namespace Jellyfin.Plugin.KinopoiskWhite.Api;
 
-public class KinopoiskExternalId : IExternalId
+public record KinopoiskExternalId : IExternalId
 {
     public string ProviderName => Constants.ProviderName;
     public string Key => Constants.ProviderId;
@@ -20,30 +20,30 @@ public class KinopoiskExternalId : IExternalId
     }
 }
 
-public record Film
+public record FilmInfo
 {
-    public int Id { get; set; }
-    public string ContentId { get; set; }
-    public FilmTitle Title { get; set; }
-    public FilmRating Rating { get; set; }
-    public FilmGallery Gallery { get; set; }
-    public FilmActors Actors { get; set; }
-    public FilmCrewMembers Directors { get; set; }
-    public FilmCrewMembers Writers { get; set; }
-    public FilmCrewMembers Producers { get; set; }
-    public FilmCrewMembers Operators { get; set; }
-    public FilmCrewMembers Composers { get; set; }
-    public FilmCrewMembers Designers { get; set; }
-    public FilmCrewMembers FilmEditors { get; set; }
-    public int? ProductionYear { get; set; }
-    public int? KpProductionYear { get; set; }
-    public int? OttProductionYear { get; set; }
-    public string Tagline { get; set; }
-    public string ShortDescription { get; set; }
-    public string Synopsis { get; set; }
-    public List<Genre> Genres { get; set; } = [];
-    public FilmPremiere WorldPremiere { get; set; }
-    public FilmRestriction Restriction { get; set; }
+    public int Id { get; init; }
+    public string ContentId { get; init; } = "";
+    public FilmTitle Title { get; init; }
+    public FilmRating Rating { get; init; }
+    public FilmGallery Gallery { get; init; }
+    public FilmActors Actors { get; init; }
+    public FilmCrewMembers Directors { get; init; }
+    public FilmCrewMembers Writers { get; init; }
+    public FilmCrewMembers Producers { get; init; }
+    public FilmCrewMembers Operators { get; init; }
+    public FilmCrewMembers Composers { get; init; }
+    public FilmCrewMembers Designers { get; init; }
+    public FilmCrewMembers FilmEditors { get; init; }
+    public int? ProductionYear { get; init; }
+    public int? KpProductionYear { get; init; }
+    public int? OttProductionYear { get; init; }
+    public string Tagline { get; init; } = "";
+    public string ShortDescription { get; init; } = "";
+    public string Synopsis { get; init; } = "";
+    public List<Genre> Genres { get; init; } = [];
+    public FilmPremiere WorldPremiere { get; init; }
+    public FilmRestriction Restriction { get; init; }
 
     private void Fill(BaseItem target)
     {
@@ -84,22 +84,13 @@ public record Film
         return;
     }
 
-    public class FilmTitle
-    {
-        public string Russian { get; set; } = "";
-        public string Original { get; set; } = "";
-    }
+    public record FilmTitle(string Russian = "", string Original = "");
+    public record Genre(string Name = "", string Slug = "");
 
-    public class Genre
+    public record FilmRestriction
     {
-        public string Name { get; set; } = "";
-        public string Slug { get; set; } = "";
-    }
-
-    public class FilmRestriction
-    {
-        public string Age { get; set; } = "";
-        public string Mpaa { get; set; } = "";
+        public string Age { get; init; } = "";
+        public string Mpaa { get; init; } = "";
 
         public string Rating
         {
@@ -114,53 +105,42 @@ public record Film
         }
     }
 
-    public class FilmRating
+    public record FilmRating
     {
-        public RatingValue Imdb { get; set; }
-        public RatingValue Kinopoisk { get; set; }
-        public RatingValue RussianCritics { get; set; }
-        public RatingWithVotesValue WorldwideCritics { get; set; }
-        public RatingValue ReviewCount { get; set; }
+        public RatingValue Imdb { get; init; }
+        public RatingValue Kinopoisk { get; init; }
+        public RatingValue RussianCritics { get; init; }
+        public RatingWithVotesValue WorldwideCritics { get; init; }
+        public RatingValue ReviewCount { get; init; }
 
-        public float Community => System.Convert.ToSingle(
-            Imdb?.Value ?? Kinopoisk?.Value ?? 0
-        );
-        public float Critics => System.Convert.ToSingle(
-            WorldwideCritics?.Percent ?? 0
-        );
-        public class RatingValue
+        public float Community => Imdb?.Value ?? Kinopoisk?.Value ?? 0;
+        public float Critics => WorldwideCritics?.Percent ?? 0;
+
+        public record RatingValue
         {
-            public double? Value { get; set; }
-            public bool? IsActive { get; set; }
-            public int? Count { get; set; }
+            public float? Value { get; init; }
+            public bool? IsActive { get; init; }
+            public int? Count { get; init; }
         }
 
-        public class RatingWithVotesValue : RatingValue
+        public record RatingWithVotesValue : RatingValue
         {
-            public double? Percent { get; set; }
-            public int? PositiveCount { get; set; }
-            public int? NegativeCount { get; set; }
+            public float? Percent { get; init; }
+            public int? PositiveCount { get; init; }
+            public int? NegativeCount { get; init; }
         }
     }
 
-    public class FilmGallery
+    public record FilmGallery
     {
-        public FilmPosters Posters { get; set; }
+        public FilmPosters Posters { get; init; }
 
-        public class FilmCovers
+        public record FilmCovers(Image Square, Image Horizontal);
+        public record FilmPosters(Image MarketingVertical, Image HdVertical, Image KpVertical);
+
+        public record Image
         {
-            public Image Square { get; set; }
-            public Image Horizontal { get; set; }
-        }
-        public class FilmPosters
-        {
-            public Image MarketingVertical { get; set; }
-            public Image HdVertical { get; set; }
-            public Image KpVertical { get; set; }
-        }
-        public class Image
-        {
-            public string AvatarsUrl { get; set; }
+            public string AvatarsUrl { get; init; } = "";
 
             public string Url => $"https://{AvatarsUrl}";
             public string Tiny => $"{Url}/100x100";
@@ -171,58 +151,48 @@ public record Film
         }
     }
 
-    public class FilmCrewMembers
+    public record FilmCrewMembers
     {
-        public List<FilmCrewMember> Items { get; set; } = [];
+        public List<FilmCrewMember> Items { get; init; } = [];
 
-        public class FilmCrewMember
+        public record FilmCrewMember
         {
-            public FilmPerson Person { get; set; }
-
-            public class FilmPerson
-            {
-                public int Id { get; set; }
-                public string Name { get; set; }
-                public string OriginalName { get; set; }
-            }
+            public FilmPerson Person { get; init; }
+            public record FilmPerson(int Id, string Name = "", string OriginalName = "");
         }
     }
 
-    public class FilmActors : FilmCrewMembers
+    public record FilmActors : FilmCrewMembers
     {
-        public int Total { get; set; } = 0;
+        public int? Total { get; init; } = 0;
     }
 
-    public class FilmBoxOffice
+    public record FilmBoxOffice
     {
-        public MoneyAmount Budget { get; set; }
-        public MoneyAmount RusBox { get; set; }
-        public MoneyAmount UsaBox { get; set; }
-        public MoneyAmount WorldBox { get; set; }
-        public MoneyAmount Marketing { get; set; }
+        public MoneyAmount Budget { get; init; }
+        public MoneyAmount RusBox { get; init; }
+        public MoneyAmount UsaBox { get; init; }
+        public MoneyAmount WorldBox { get; init; }
+        public MoneyAmount Marketing { get; init; }
 
-        public class MoneyAmount
+        public record MoneyAmount
         {
-            public int Amount { get; set; } = 0;
-            public FilmCurrency Currency { get; set; }
-
+            public int? Amount { get; init; } = 0;
+            public FilmCurrency Currency { get; init; }
             public string AmountString => $"{Currency.Symbol}{Amount}";
 
-            public class FilmCurrency
-            {
-                public string Symbol { get; set; }
-            }
+            public record FilmCurrency(string Symbol = "");
         }
     }
 
-    public class FilmPremiere
+    public record FilmPremiere
     {
-        public FilmIncompleteDate IncompleteDate { get; set; }
+        public FilmIncompleteDate IncompleteDate { get; init; }
 
-        public class FilmIncompleteDate
+        public record FilmIncompleteDate
         {
-            public string Accuracy { get; set; }
-            public string Date { get; set; }
+            public string Accuracy { get; init; } = "";
+            public string Date { get; init; } = "";
         }
     }
 }

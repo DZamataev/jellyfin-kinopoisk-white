@@ -59,7 +59,7 @@ public class GraphQL
         return await response.Content.ReadAsStringAsync();
     }
 
-    public async Task<Film> SuggestSearch(string keyword, CancellationToken cancellationToken)
+    public async Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken)
     {
         try
         {
@@ -74,7 +74,7 @@ public class GraphQL
                 .GetProperty("topResult")
                 .GetProperty("global");
 
-            var film = JsonSerializer.Deserialize<Film>(root, _jsonOptions);
+            var film = JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
             _logger.LogInformation("SuggestSearch [{keyword}] found KID {kid}.", keyword, film.Id);
             return film;
         }
@@ -86,7 +86,7 @@ public class GraphQL
         return null;
     }
 
-    public async Task<Film> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
+    public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
     {
         try
         {
@@ -113,7 +113,7 @@ public class GraphQL
                 .GetProperty("data")
                 .GetProperty("film");
 
-            var film = JsonSerializer.Deserialize<Film>(root, _jsonOptions);
+            var film = JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
             _logger.LogInformation("FilmBaseInfo for KID {kid} loaded.", filmId);
             return film;
         }
