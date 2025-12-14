@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using System.Threading.Channels;
 
-namespace Jellyfin.Plugin.KinopoiskWhite;
+namespace Plugin.Common;
 
 public class TaskQueue
 {

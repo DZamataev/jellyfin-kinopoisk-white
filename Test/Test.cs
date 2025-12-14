@@ -4,13 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 
-namespace Jellyfin.Plugin.KinopoiskWhite.Tests; 
+using Plugin.Api;
+using Plugin.Common;
 
-using Api;
-using Extensions;
+namespace Tests; 
+
 
 public class TransliterationTests {
-    private KinopoiskApi _api;
+    private readonly KinopoiskApi _api;
     public TransliterationTests()
     {
         var services = new ServiceCollection();

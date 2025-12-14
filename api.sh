@@ -43,10 +43,22 @@ reload() {
     params=$(echo "${params[@]}" | tr ' ' '&')
     items=$(get Library/VirtualFolders | jq -r .[].ItemId)
     for item in $items; do
-        post "Items/$item/Refresh?$params"
         printf '.'
+        post "Items/$item/Refresh?$params"
     done
-    sleep 2
+
+    while true; do
+        printf '.'
+        status=$(get Library/VirtualFolders | jq -r .[].RefreshStatus)
+        for line in ${status[@]}; do
+            [ "$line" != "Idle" ] && {
+                sleep 1
+                continue 2
+            }
+        done
+        break
+    done
+
     echo OK
 }
 
@@ -87,7 +99,9 @@ checkPlugin() {
     esac
 }
 
-[ "$1" == "restart" ] && restart
+
+
+# [ "$1" == "restart" ] && restart
 checkPlugin
 reload
 list

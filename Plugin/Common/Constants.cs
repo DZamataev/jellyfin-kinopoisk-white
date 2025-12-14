@@ -1,4 +1,4 @@
-namespace Jellyfin.Plugin.KinopoiskWhite {
+namespace Plugin.Common {
     public static class Constants {
         public const string ProviderId = "kinopoisk";
         public const string ProviderName = "КиноПоиск (белый список)";

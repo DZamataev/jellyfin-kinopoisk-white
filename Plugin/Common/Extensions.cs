@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using MediaBrowser.Controller.Entities.Movies;
 using System.Text.RegularExpressions;
 
-namespace Jellyfin.Plugin.KinopoiskWhite.Extensions;
+namespace Plugin.Common;
 
 public static partial class Extensions
 {

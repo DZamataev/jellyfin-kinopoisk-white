@@ -5,7 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.KinopoiskWhite.Api;
+namespace Plugin.Api;
+using Common;
 
 public class GraphQL
 {
@@ -32,7 +33,7 @@ public class GraphQL
     private static string GetEmbeddedQuery(string fileName)
     {
         var assembly = typeof(KinopoiskApi).Assembly;
-        var resourceName = $"Plugin.GraphQL.{fileName}.gql";
+        var resourceName = $"Plugin.Api.Queries.{fileName}.gql";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null) throw new FileNotFoundException($"Resource {resourceName} not found");

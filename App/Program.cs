@@ -2,10 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.KinopoiskWhite; 
+using Plugin.Api;
+using Plugin.Common;
 
-using Api;
-using Extensions;
+namespace App; 
 
 class Program {
     private static KinopoiskApi _api;

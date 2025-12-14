@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Jellyfin.Plugin.KinopoiskWhite</AssemblyName>
+    <AssemblyName>KinopoiskWhite</AssemblyName>
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
@@ -16,7 +16,7 @@
     <PackageReference Include="System.Text.Json" Version="8.0.0" />
     <PackageReference Include="System.Net.Http" Version="8.0.0" />
     -->
-    <EmbeddedResource Include="GraphQL\*.gql">
+    <EmbeddedResource Include="Api\Queries\*.gql">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>

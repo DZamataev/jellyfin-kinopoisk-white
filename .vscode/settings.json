@@ -1,4 +1,4 @@
 {
-    "olasoft.pluginDll": "${workspaceFolder}/Plugin/bin/Debug/net8.0/Jellyfin.Plugin.KinopoiskWhite.dll",
-    "olasoft.outputDir": "/output/Jellyfin.Plugin.KinopoiskWhite",
+    "olasoft.pluginDll": "${workspaceFolder}/Plugin/bin/Debug/net8.0/KinopoiskWhite.dll",
+    "olasoft.outputDir": "/output/KinopoiskWhite",
 }

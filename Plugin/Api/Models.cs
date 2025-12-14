@@ -1,24 +1,6 @@
 using System.Collections.Generic;
-using Jellyfin.Data.Entities.Libraries;
-using Jellyfin.Data.Enums;
-using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Providers;
-using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Providers;
 
-namespace Jellyfin.Plugin.KinopoiskWhite.Api;
-
-public record KinopoiskExternalId : IExternalId
-{
-    public string ProviderName => Constants.ProviderName;
-    public string Key => Constants.ProviderId;
-    public string UrlFormatString => "https://www.kinopoisk.ru/film/{0}";
-    public ExternalIdMediaType? Type => null;
-    public bool Supports(IHasProviderIds item)
-    {
-        return item is Movie || item is Series;
-    }
-}
+namespace Plugin.Api;
 
 public record FilmInfo
 {
@@ -44,45 +26,6 @@ public record FilmInfo
     public List<Genre> Genres { get; init; } = [];
     public FilmPremiere WorldPremiere { get; init; }
     public FilmRestriction Restriction { get; init; }
-
-    private void Fill(BaseItem target)
-    {
-        target.SetProviderId(Constants.ProviderId, System.Convert.ToString(Id));
-        target.Name = Title.Russian;
-        target.OriginalTitle = Title.Original;
-        target.ProductionYear = ProductionYear;
-        target.CommunityRating = Rating.Community;
-        target.CriticRating = Rating.Critics;
-        target.CustomRating = Restriction?.Rating;
-
-        target.Tagline = ShortDescription;
-        target.Overview = Synopsis;
-
-        foreach (var genre in Genres)
-            target.AddGenre(genre.Slug);
-
-        return;
-    }
-
-    public void Fill<T>(MetadataResult<T> target) where T : BaseItem
-    {
-        Fill(target.Item);
-
-        void AddPerson(PersonKind Type, FilmCrewMembers.FilmCrewMember Crew)
-        {
-            if (Crew?.Person?.Name == null) return;
-            target.AddPerson(new PersonInfo { Name = Crew.Person.Name, Type = Type });
-        }
-
-        foreach (var person in Actors.Items) AddPerson(PersonKind.Actor, person);
-        foreach (var person in Directors.Items) AddPerson(PersonKind.Director, person);
-        foreach (var person in Writers.Items) AddPerson(PersonKind.Writer, person);
-        foreach (var person in Producers.Items) AddPerson(PersonKind.Producer, person);
-        foreach (var person in Composers.Items) AddPerson(PersonKind.Composer, person);
-        foreach (var person in FilmEditors.Items) AddPerson(PersonKind.Editor, person);
-
-        return;
-    }
 
     public record FilmTitle(string Russian = "", string Original = "");
     public record Genre(string Name = "", string Slug = "");

@@ -10,9 +10,9 @@ using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Controller.Entities;
 
-namespace Jellyfin.Plugin.KinopoiskWhite;
-
+namespace Plugin.Providers;
 using Api;
+using Common;
 
 public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 {
