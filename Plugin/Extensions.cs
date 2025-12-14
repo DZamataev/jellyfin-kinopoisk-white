@@ -39,8 +39,6 @@ public static partial class Extensions
             var title = string.Join(" ", parts.Take(index));
             int year = int.Parse(parts[index]);
             set.Add((title, year));
-
-            set.Add((title, null));
         }
 
         var fullName = FileExtension().Replace(fileName, "");
@@ -58,6 +56,9 @@ public static partial class Extensions
 
             if (!result.Contains((title, year)))
                 result.Add((title, year));
+
+            if (!result.Contains((title, null)))
+                result.Add((title, null));
 
             title = LeadingDigits().Replace(title, "").Trim();
             if (!result.Contains((title, year)))
