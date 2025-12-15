@@ -55,15 +55,6 @@ public class KinopoiskWhitePluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton((sp) => new GraphQL(
-            sp.GetRequiredService<ILogger<GraphQL>>(),
-            sp.GetRequiredService<IHttpClientFactory>()
-        ));
-        serviceCollection.AddSingleton((sp) => new KinopoiskApi(
-            sp.GetRequiredService<GraphQL>(),
-            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
-            sp.GetRequiredService<IHttpClientFactory>()
-        ));
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, KinopoiskItemProvider>();
     }
 }

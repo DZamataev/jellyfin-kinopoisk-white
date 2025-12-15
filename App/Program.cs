@@ -17,11 +17,6 @@ class Program {
         var sp = services.BuildServiceProvider();
 
         _api = new KinopoiskApi(
-            new GraphQL(
-                sp.GetRequiredService<ILogger<GraphQL>>(),
-                sp.GetRequiredService<IHttpClientFactory>()
-            ),
-            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
             sp.GetRequiredService<IHttpClientFactory>()
         );
     }
@@ -37,7 +32,7 @@ class Program {
         {
             Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
         };
-        var kid = await _api.GetKinopoiskId(info, CancellationToken.None);
+        var kid = await _api.GetKinopoiskId(info.Path, CancellationToken.None);
         Console.WriteLine("Finished");
     }
 }

@@ -76,21 +76,50 @@ public record FilmInfo
 
     public record FilmGallery
     {
-        public FilmPosters Posters { get; init; }
+        public FilmImages Covers { get; init; }
+        public FilmImages Logos { get; init; }
+        public FilmImages Posters { get; init; }
 
-        public record FilmCovers(Image Square, Image Horizontal);
-        public record FilmPosters(Image MarketingVertical, Image HdVertical, Image KpVertical);
+        public string Primary => Posters?.Vertical?.Url;
+        public string Backdrop => Covers?.Horizontal?.Url;
+        public string Logo => Logos?.Horizontal?.Url;
+
+        public record FilmImages(
+            Image Square,
+            HorizontalImage Horizontal,
+            VerticalImage Vertical,
+            VerticalImage MarketingVertical,
+            VerticalImage HdVertical,
+            VerticalImage KpVertical
+        );
 
         public record Image
         {
             public string AvatarsUrl { get; init; } = "";
+            public ImageSize OrigSize { get; init; }
 
-            public string Url => $"https://{AvatarsUrl}";
-            public string Tiny => $"{Url}/100x100";
-            public string Small => $"{Url}/100x100";
-            public string Medium => $"{Url}/400x400";
-            public string Large => $"{Url}/800x800";
-            public string ExtraLarge => $"{Url}/1200x1200";
+            public record ImageSize(int? Width, int? Height);
+
+            private string BaseUrl => $"https:{AvatarsUrl}";
+            protected virtual string DefaultSize => "100x100";
+            public string Url
+            {
+                get
+                {
+                    var (width, height) = (OrigSize?.Width, OrigSize?.Height);
+                    return (width != null && height != null)
+                        ? $"{BaseUrl}/{width}x{height}"
+                        : $"{BaseUrl}/{DefaultSize}";
+                }
+            }
+        }
+        public record VerticalImage: Image
+        {
+            protected override string DefaultSize => "100x400";
+        }
+        public record HorizontalImage: Image
+        {
+            protected override string DefaultSize => "400x100";
         }
     }
 

@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Plugin.Api;
 using Common;
@@ -12,14 +11,11 @@ public class GraphQL
 {
     public readonly HttpClient _client;
     private readonly TaskQueue _queue;
-    private readonly ILogger _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GraphQL(ILogger<GraphQL> logger, IHttpClientFactory httpClientFactory)
+    public GraphQL(IHttpClientFactory httpClientFactory)
     {
         _queue = new TaskQueue();
-
-        _logger = logger;
 
         _client = httpClientFactory.CreateClient();
         _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
@@ -42,7 +38,7 @@ public class GraphQL
         return reader.ReadToEnd();
     }
 
-    public async Task<string> Call(string operationName, object variables, CancellationToken cancellationToken)
+    public async Task<JsonDocument> Call(string operationName, object variables, CancellationToken cancellationToken)
     {
         var query = GetEmbeddedQuery(operationName);
         var request = new { operationName, variables, query };
@@ -57,71 +53,73 @@ public class GraphQL
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadAsStringAsync();
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        using var doc = JsonDocument.Parse(result);
+
+        if (doc.RootElement.ValueKind == JsonValueKind.Null)
+            throw new System.Exception("Document is null");
+
+        return doc;
     }
 
     public async Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await Call("SuggestSearch", new { keyword }, cancellationToken)
-                .ConfigureAwait(false);
+        var doc = await Call("SuggestSearch", new { keyword }, cancellationToken)
+            .ConfigureAwait(false);
 
-            using var doc = JsonDocument.Parse(result);
-            var root = doc.RootElement
-                .GetProperty("data")
-                .GetProperty("suggest")
-                .GetProperty("top")
-                .GetProperty("topResult")
-                .GetProperty("global");
+        var root = doc.RootElement
+            .GetProperty("data")
+            .GetProperty("suggest")
+            .GetProperty("top")
+            .GetProperty("topResult")
+            .GetProperty("global");
 
-            var film = JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
-            _logger.LogInformation("SuggestSearch [{keyword}] found KID {kid}.", keyword, film.Id);
-            return film;
-        }
-        catch (System.Exception ex)
-        {
-            _logger.LogDebug("SuggestSearch [{keyword}] not found.", keyword);
-            _logger.LogTrace(ex, "Suggest Search");
-        }
-        return null;
+        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
     }
 
     public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
     {
-        try
+        var request = new
         {
-            var request = new {
-                filmId,
-                isAuthorized = false,
-                actorsLimit = 10,
-                voiceOverActorsLimit = 0,
-                relatedMoviesLimit = 0,
-                checkSilentInvoiceAvailability = false,
-                withPurchaseOptions = false,
-                watchabilityLimit = 0,
-                socialArgumentLimit = 0,
-            };
-            var result = await Call("FilmBaseInfo", request, cancellationToken)
-                .ConfigureAwait(false);
+            filmId,
+            isAuthorized = false,
+            actorsLimit = 10,
+            voiceOverActorsLimit = 0,
+            relatedMoviesLimit = 0,
+            checkSilentInvoiceAvailability = false,
+            withPurchaseOptions = false,
+            watchabilityLimit = 0,
+            socialArgumentLimit = 0,
+        };
+        var doc = await Call("FilmBaseInfo", request, cancellationToken)
+            .ConfigureAwait(false);
 
-            using var doc = JsonDocument.Parse(result);
+        var root = doc.RootElement
+            .GetProperty("data")
+            .GetProperty("film");
 
-            if (doc.RootElement.ValueKind == JsonValueKind.Null)
-                throw new System.Exception("Document is null");
+        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
+    }
 
-            var root = doc.RootElement
-                .GetProperty("data")
-                .GetProperty("film");
+    public async Task<FilmInfo> MovieImagesItems(int id, string type, CancellationToken cancellationToken)
+    {
+        // COVER, SHOOTING, STILL, POSTER, FAN_ART, PROMO, CONCEPT, WALLPAPER, SCREENSHOT
 
-            var film = JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
-            _logger.LogInformation("FilmBaseInfo for KID {kid} loaded.", filmId);
-            return film;
-        }
-        catch (System.Exception)
+        var request = new
         {
-            _logger.LogDebug("FilmBaseInfo KID {kid} not found.", filmId);
-        }
-        return null;
+            id,
+            type,
+            offset = 0,
+            limit = 10
+        };
+        var doc = await Call("MovieImagesItems", request, cancellationToken)
+            .ConfigureAwait(false);
+
+        var root = doc.RootElement
+            .GetProperty("data")
+            .GetProperty("movie");
+
+        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
     }
 }

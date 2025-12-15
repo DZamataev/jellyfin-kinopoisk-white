@@ -19,11 +19,6 @@ public class TransliterationTests {
         var sp = services.BuildServiceProvider();
 
         _api = new KinopoiskApi(
-            new GraphQL(
-                sp.GetRequiredService<ILogger<GraphQL>>(),
-                sp.GetRequiredService<IHttpClientFactory>()
-            ),
-            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
             sp.GetRequiredService<IHttpClientFactory>()
         );
     }
