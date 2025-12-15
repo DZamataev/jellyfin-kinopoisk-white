@@ -69,7 +69,7 @@ list() {
         Fields=AllFields
     )
     params=$(echo "${params[@]}" | tr ' ' '&')
-    get "Items?$params" | jq '.Items[]? | { Name, ProductionYear }'
+    get "Items?$params" | jq '.Items[]? | { Name, ProductionYear, CriticRating, CommunityRating }'
 }
 
 checkPlugin() {
@@ -101,7 +101,7 @@ checkPlugin() {
 
 
 
-# [ "$1" == "restart" ] && restart
+[ "$1" == "restart" ] && restart
 checkPlugin
 reload
 list

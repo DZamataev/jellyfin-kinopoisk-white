@@ -56,8 +56,8 @@ public record FilmInfo
         public RatingWithVotesValue WorldwideCritics { get; init; }
         public RatingValue ReviewCount { get; init; }
 
-        public float Community => Imdb?.Value ?? Kinopoisk?.Value ?? 0;
-        public float Critics => WorldwideCritics?.Percent ?? 0;
+        public float? Community => Imdb?.Value ?? Kinopoisk?.Value;
+        public float? Critics => WorldwideCritics?.Percent;
 
         public record RatingValue
         {
