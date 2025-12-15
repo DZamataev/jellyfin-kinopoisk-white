@@ -4,6 +4,7 @@ namespace Plugin.Api;
 
 public record FilmInfo
 {
+    public bool QueriedById { get; init; } = false;
     public int Id { get; init; }
     public string ContentId { get; init; } = "";
     public FilmTitle Title { get; init; }

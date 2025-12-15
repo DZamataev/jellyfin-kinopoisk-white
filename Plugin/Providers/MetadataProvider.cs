@@ -16,26 +16,38 @@ namespace Plugin.Providers;
 using Api;
 using Common;
 
-public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
+public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
+                                     IRemoteImageProvider
 {
     public string Name => Constants.ProviderName;
     public static string Description => Constants.ProviderDescription;
 
     private readonly ILogger _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly KinopoiskApi _api;
 
     public KinopoiskItemProvider(ILogger<KinopoiskItemProvider> logger, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
         _api = new KinopoiskApi(httpClientFactory);
     }
 
-    public Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken cancellationToken)
-    {
-        return GetResult<Movie>(info, cancellationToken);
-    }
+    public Task<MetadataResult<Movie>>
+    GetMetadata(MovieInfo info, CancellationToken cancellationToken)
+    => GetResult<Movie>(info, cancellationToken);
 
-    private async Task<MetadataResult<T>> GetResult<T>(ItemLookupInfo info, CancellationToken cancellationToken)
+    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
+    [
+        ImageType.Primary,
+        ImageType.Backdrop,
+        ImageType.Logo,
+    ];
+
+    public bool Supports(BaseItem item) => item is Movie;
+
+    private async Task<MetadataResult<T>>
+    GetResult<T>(ItemLookupInfo info, CancellationToken cancellationToken)
     where T : BaseItem, new()
     {
         var result = new MetadataResult<T>
@@ -46,41 +58,58 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
             ResultLanguage = Constants.ProviderMetadataLanguage,
         };
 
-        var contentId = info.GetProviderId(Constants.ProviderId);
+        var kid = info.GetProviderId(Constants.ProviderName);
 
-        if (string.IsNullOrWhiteSpace(contentId))
+        if (string.IsNullOrWhiteSpace(kid))
         {
             _logger.LogDebug("KID is empty {item}", info.Name);
+
             result.QueriedById = false;
 
-            try {
-                var meta = await _api.GetKinopoiskId(info.Path, cancellationToken)
-                    .ConfigureAwait(false);
-                _logger.LogInformation("Found KID {kid} for {item}", meta.Kid, info.Name);
-
-                contentId = meta.ContentId;
-                result.Item.SetProviderId(Constants.ProviderId, meta.ContentId);
-            }
-            catch (System.Exception ex)
+            try
             {
-                _logger.LogError(ex, "KID not found for {item}", info.Name);
+                var key = await _api.GetKinopoiskId(info.Path, cancellationToken);
+
+                _logger.LogInformation("Found KID {kid} [{cid}] for {item}",
+                                       key.Kid, key.ContentId, info.Name);
+                kid = key.Kid;
+            }
+            catch
+            {
+                _logger.LogError("KID not found for {item}", info.Name);
             }
         }
 
-        if (!string.IsNullOrEmpty(contentId))
-        {
-            try {
-                var metadata = await _api.Fetch(contentId, cancellationToken).ConfigureAwait(false);
-                Fill(metadata, result);
-                _logger.LogInformation("Metadata loaded for {info}", info.Name);
-            }
-            catch (System.Exception ex)
-            {
-                _logger.LogError(ex, "Metadata not found for {item}", info.Name);
-            }
-        }
+        if (string.IsNullOrEmpty(kid)) return result;
+
+        var meta = await _api.FetchByKid(kid, cancellationToken);
+
+        Fill(meta, result);
+
+        _logger.LogInformation("Metadata loaded for {kid}", kid);
 
         return result;
+    }
+
+    public async Task<IEnumerable<RemoteImageInfo>>
+    GetImages(BaseItem item, CancellationToken cancellationToken)
+    {
+        var cid = item.GetProviderId(Constants.ProviderId);
+        var kid = item.GetProviderId(Constants.ProviderName);
+
+        if (string.IsNullOrWhiteSpace(kid)) return [];
+
+        FilmInfo meta = null;
+        if (!string.IsNullOrWhiteSpace(cid))
+        {
+            meta = await _api.FetchByCid(cid, cancellationToken).ConfigureAwait(false);
+        }
+        if (meta == null)
+        {
+            meta = await _api.FetchByKid(kid, cancellationToken).ConfigureAwait(false);
+        }
+
+        return FillImages(meta);
     }
 
     public Task<IEnumerable<RemoteSearchResult>>
@@ -105,20 +134,20 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
         return Task.FromResult<IEnumerable<RemoteSearchResult>>(results);
     }
 
-    public async Task<HttpResponseMessage>
+    public Task<HttpResponseMessage>
     GetImageResponse(string url, CancellationToken cancellationToken)
-    {
-        using var httpClient = new HttpClient();
-        var response = await httpClient.GetAsync(url, cancellationToken);
+    => _httpClientFactory
+        .CreateClient(MediaBrowser.Common.Net.NamedClient.Default)
+        .GetAsync(url, cancellationToken);
 
-        _logger.LogInformation("GetImageResponse");
-
-        return response;
-    }
-
-    public static void Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
+    public static void
+    Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
     {
         target.Item.SetProviderId(Constants.ProviderName, film.Kid);
+
+        if (!string.IsNullOrEmpty(film.ContentId))
+            target.Item.SetProviderId(Constants.ProviderId, film.ContentId);
+
         target.Item.Name = film.Title.Russian;
         target.Item.OriginalTitle = film.Title.Original;
         target.Item.ProductionYear = film.ProductionYear;
@@ -151,5 +180,38 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
         target.HasMetadata = true;
 
         return;
+    }
+
+    private static IEnumerable<RemoteImageInfo>
+    FillImages(FilmInfo film)
+    {
+        var res = Enumerable.Empty<RemoteImageInfo>();
+
+        static RemoteImageInfo fill(ImageType type, string image)
+        {
+            if (image == null) return null;
+
+            return new RemoteImageInfo
+            {
+                Type = type,
+                Url = image,
+                Language = Constants.ProviderMetadataLanguage,
+                ProviderName = Constants.ProviderName,
+            };
+        }
+
+        (ImageType, string)[] images = [
+            (ImageType.Primary, film.Gallery?.Primary),
+            (ImageType.Backdrop, film.Gallery?.Backdrop),
+            (ImageType.Logo, film.Gallery?.Logo),
+        ];
+
+        foreach (var (type, url) in images)
+        {
+            var result = fill(type, url);
+
+            if (result != null)
+                yield return result;
+        }
     }
 }

@@ -33,10 +33,13 @@ class Program {
         var info = new MovieInfo
         {
             // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
-            Path = "F1. The Movie (2025).mkv"
+            // Path = "F1. The Movie (2025).mkv"
+            Path = "After.Life.1998.HDRip_[1.46].avi"
         };
         var meta = await _api.GetKinopoiskId(info.Path, _token);
-        meta = await _api.Fetch(meta.ContentId, _token);
+        meta = await _api.FetchByKid(meta.Kid, _token);
+        Console.WriteLine($"{meta.Title}");
+        meta = await _api.FetchByCid(meta.ContentId, _token);
         Console.WriteLine($"{meta.Title}");
         var result = new MetadataResult<Movie>()
         {
