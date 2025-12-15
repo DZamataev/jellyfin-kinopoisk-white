@@ -16,8 +16,7 @@ namespace Plugin.Providers;
 using Api;
 using Common;
 
-public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
-                                     IRemoteImageProvider
+public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 {
     public string Name => Constants.ProviderName;
     public static string Description => Constants.ProviderDescription;
@@ -37,15 +36,6 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
     GetMetadata(MovieInfo info, CancellationToken cancellationToken)
     => GetResult<Movie>(info, cancellationToken);
 
-    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
-    [
-        ImageType.Primary,
-        ImageType.Backdrop,
-        ImageType.Logo,
-    ];
-
-    public bool Supports(BaseItem item) => item is Movie;
-
     private async Task<MetadataResult<T>>
     GetResult<T>(ItemLookupInfo info, CancellationToken cancellationToken)
     where T : BaseItem, new()
@@ -58,7 +48,7 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
             ResultLanguage = Constants.ProviderMetadataLanguage,
         };
 
-        var kid = info.GetProviderId(Constants.ProviderName);
+        var kid = info.GetProviderId(Constants.ProviderId);
 
         if (string.IsNullOrWhiteSpace(kid))
         {
@@ -89,27 +79,6 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
         _logger.LogInformation("Metadata loaded for {kid}", kid);
 
         return result;
-    }
-
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(BaseItem item, CancellationToken cancellationToken)
-    {
-        var cid = item.GetProviderId(Constants.ProviderId);
-        var kid = item.GetProviderId(Constants.ProviderName);
-
-        if (string.IsNullOrWhiteSpace(kid)) return [];
-
-        FilmInfo meta = null;
-        if (!string.IsNullOrWhiteSpace(cid))
-        {
-            meta = await _api.FetchByCid(cid, cancellationToken).ConfigureAwait(false);
-        }
-        if (meta == null)
-        {
-            meta = await _api.FetchByKid(kid, cancellationToken).ConfigureAwait(false);
-        }
-
-        return FillImages(meta);
     }
 
     public Task<IEnumerable<RemoteSearchResult>>
@@ -143,10 +112,10 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
     public static void
     Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
     {
-        target.Item.SetProviderId(Constants.ProviderName, film.Kid);
+        target.Item.SetProviderId(Constants.ProviderId, film.Kid);
 
         if (!string.IsNullOrEmpty(film.ContentId))
-            target.Item.SetProviderId(Constants.ProviderId, film.ContentId);
+            target.Item.SetProviderId(Constants.ProviderName, film.ContentId);
 
         target.Item.Name = film.Title.Russian;
         target.Item.OriginalTitle = film.Title.Original;
@@ -180,38 +149,5 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>,
         target.HasMetadata = true;
 
         return;
-    }
-
-    private static IEnumerable<RemoteImageInfo>
-    FillImages(FilmInfo film)
-    {
-        var res = Enumerable.Empty<RemoteImageInfo>();
-
-        static RemoteImageInfo fill(ImageType type, string image)
-        {
-            if (image == null) return null;
-
-            return new RemoteImageInfo
-            {
-                Type = type,
-                Url = image,
-                Language = Constants.ProviderMetadataLanguage,
-                ProviderName = Constants.ProviderName,
-            };
-        }
-
-        (ImageType, string)[] images = [
-            (ImageType.Primary, film.Gallery?.Primary),
-            (ImageType.Backdrop, film.Gallery?.Backdrop),
-            (ImageType.Logo, film.Gallery?.Logo),
-        ];
-
-        foreach (var (type, url) in images)
-        {
-            var result = fill(type, url);
-
-            if (result != null)
-                yield return result;
-        }
     }
 }

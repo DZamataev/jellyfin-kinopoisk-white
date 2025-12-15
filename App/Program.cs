@@ -34,7 +34,8 @@ class Program {
         {
             // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
             // Path = "F1. The Movie (2025).mkv"
-            Path = "After.Life.1998.HDRip_[1.46].avi"
+            // Path = "After.Life.1998.HDRip_[1.46].avi"
+            Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
         };
         var meta = await _api.GetKinopoiskId(info.Path, _token);
         meta = await _api.FetchByKid(meta.Kid, _token);

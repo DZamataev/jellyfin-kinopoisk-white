@@ -83,8 +83,8 @@ public record FilmInfo
         public FilmImages Logos { get; init; }
         public FilmImages Posters { get; init; }
 
-        public string Primary => Posters?.Vertical?.Url;
-        public string Backdrop => Covers?.Horizontal?.Url;
+        public string Primary => (Posters?.Vertical ?? Posters?.MarketingVertical)?.Url;
+        public string Backdrop => (Covers?.Horizontal ?? Covers.Square)?.Url;
         public string Logo => Logos?.Horizontal?.Url;
 
         public record FilmImages(

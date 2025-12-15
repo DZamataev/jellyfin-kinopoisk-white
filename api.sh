@@ -48,11 +48,11 @@ reload() {
     done
 
     while true; do
+        sleep 1
         printf '.'
         status=$(get Library/VirtualFolders | jq -r .[].RefreshStatus)
         for line in ${status[@]}; do
             [ "$line" != "Idle" ] && {
-                sleep 1
                 continue 2
             }
         done
