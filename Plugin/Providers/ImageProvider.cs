@@ -43,10 +43,10 @@ public class ImageProvider : IRemoteImageProvider
 
     public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        var kinopoiskId = item.GetProviderId(Constants.ProviderName);
-        if (string.IsNullOrWhiteSpace(kinopoiskId)) return [];
+        var contentId = item.GetProviderId(Constants.ProviderId);
+        if (string.IsNullOrWhiteSpace(contentId)) return [];
 
-        var metadata = await _api.Fetch(kinopoiskId, cancellationToken).ConfigureAwait(false);
+        var metadata = await _api.Fetch(contentId, cancellationToken).ConfigureAwait(false);
         return FillImages(metadata);
     }
 

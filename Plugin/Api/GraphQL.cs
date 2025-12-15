@@ -55,7 +55,7 @@ public class GraphQL
 
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        using var doc = JsonDocument.Parse(result);
+        var doc = JsonDocument.Parse(result);
 
         if (doc.RootElement.ValueKind == JsonValueKind.Null)
             throw new System.Exception("Document is null");
@@ -63,24 +63,29 @@ public class GraphQL
         return doc;
     }
 
-    public async Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken)
+    public async Task<FilmInfo> Call(
+        string operationName, object variables, string path,
+        CancellationToken cancellationToken)
     {
-        var doc = await Call("SuggestSearch", new { keyword }, cancellationToken)
+        using var doc = await Call(operationName, variables, cancellationToken)
             .ConfigureAwait(false);
 
-        var root = doc.RootElement
-            .GetProperty("data")
-            .GetProperty("suggest")
-            .GetProperty("top")
-            .GetProperty("topResult")
-            .GetProperty("global");
-
+        var root = doc.RootElement;
+        foreach (var chunk in path.Split('.'))
+        {
+            root = root.GetProperty(chunk);
+        }
         return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
     }
 
+    public async Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken)
+    => await Call(
+        "SuggestSearch", new { keyword },
+        "data.suggest.top.topResult.global", cancellationToken);
+
     public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
-    {
-        var request = new
+    => await Call(
+        "FilmBaseInfo", new
         {
             filmId,
             isAuthorized = false,
@@ -91,16 +96,17 @@ public class GraphQL
             withPurchaseOptions = false,
             watchabilityLimit = 0,
             socialArgumentLimit = 0,
-        };
-        var doc = await Call("FilmBaseInfo", request, cancellationToken)
-            .ConfigureAwait(false);
+        },
+        "data.film", cancellationToken);
 
-        var root = doc.RootElement
-            .GetProperty("data")
-            .GetProperty("film");
-
-        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
-    }
+    public async Task<FilmInfo> FilmPage(string contentUuid,
+                                         CancellationToken cancellationToken,
+                                         int seasonNumber = 0,
+                                         int episodeNumber = 0)
+    => await Call(
+        "FilmPage",
+        new { contentUuid, seasonNumber, episodeNumber, isAuthorized = false },
+        "data.movieByContentUuid", cancellationToken);
 
     public async Task<FilmInfo> MovieImagesItems(int id, string type, CancellationToken cancellationToken)
     {
@@ -113,7 +119,7 @@ public class GraphQL
             offset = 0,
             limit = 10
         };
-        var doc = await Call("MovieImagesItems", request, cancellationToken)
+        using var doc = await Call("MovieImagesItems", request, cancellationToken)
             .ConfigureAwait(false);
 
         var root = doc.RootElement

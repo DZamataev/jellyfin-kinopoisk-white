@@ -1,14 +1,16 @@
-﻿using MediaBrowser.Controller.Providers;
+﻿using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 using Plugin.Api;
 using Plugin.Common;
+using Plugin.Providers;
 
 namespace App; 
 
 class Program {
     private static KinopoiskApi _api;
+    private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
     {
@@ -30,9 +32,17 @@ class Program {
 
         var info = new MovieInfo
         {
-            Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
+            // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
+            Path = "F1. The Movie (2025).mkv"
         };
-        var kid = await _api.GetKinopoiskId(info.Path, CancellationToken.None);
+        var meta = await _api.GetKinopoiskId(info.Path, _token);
+        meta = await _api.Fetch(meta.ContentId, _token);
+        Console.WriteLine($"{meta.Title}");
+        var result = new MetadataResult<Movie>()
+        {
+            Item = new Movie()
+        };
+        KinopoiskItemProvider.Fill(meta, result);
         Console.WriteLine("Finished");
     }
 }

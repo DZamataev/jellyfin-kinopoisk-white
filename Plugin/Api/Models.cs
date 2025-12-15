@@ -30,6 +30,8 @@ public record FilmInfo
     public record FilmTitle(string Russian = "", string Original = "");
     public record Genre(string Name = "", string Slug = "");
 
+    public string Kid => System.Convert.ToString(Id);
+
     public record FilmRestriction
     {
         public string Age { get; init; } = "";
@@ -115,11 +117,11 @@ public record FilmInfo
         }
         public record VerticalImage: Image
         {
-            protected override string DefaultSize => "100x400";
+            protected override string DefaultSize => "600x900";
         }
         public record HorizontalImage: Image
         {
-            protected override string DefaultSize => "400x100";
+            protected override string DefaultSize => "900x600";
         }
     }
 

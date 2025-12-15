@@ -46,16 +46,20 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
             ResultLanguage = Constants.ProviderMetadataLanguage,
         };
 
-        var kinopoiskId = info.GetProviderId(Constants.ProviderName);
-        if (string.IsNullOrWhiteSpace(kinopoiskId))
+        var contentId = info.GetProviderId(Constants.ProviderId);
+
+        if (string.IsNullOrWhiteSpace(contentId))
         {
             _logger.LogDebug("KID is empty {item}", info.Name);
             result.QueriedById = false;
 
             try {
-                kinopoiskId = await _api.GetKinopoiskId(info.Path, cancellationToken)
+                var meta = await _api.GetKinopoiskId(info.Path, cancellationToken)
                     .ConfigureAwait(false);
-                _logger.LogInformation("Found KID {kid} for {item}", kinopoiskId, info.Name);
+                _logger.LogInformation("Found KID {kid} for {item}", meta.Kid, info.Name);
+
+                contentId = meta.ContentId;
+                result.Item.SetProviderId(Constants.ProviderId, meta.ContentId);
             }
             catch (System.Exception ex)
             {
@@ -63,13 +67,10 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
             }
         }
 
-        if (!string.IsNullOrEmpty(kinopoiskId))
+        if (!string.IsNullOrEmpty(contentId))
         {
-            result.Item.SetProviderId(Constants.ProviderName, kinopoiskId);
-            result.HasMetadata = true;
-
             try {
-                var metadata = await _api.Fetch(kinopoiskId, cancellationToken).ConfigureAwait(false);
+                var metadata = await _api.Fetch(contentId, cancellationToken).ConfigureAwait(false);
                 Fill(metadata, result);
                 _logger.LogInformation("Metadata loaded for {info}", info.Name);
             }
@@ -115,9 +116,9 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
         return response;
     }
 
-    private static void Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
+    public static void Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
     {
-        target.Item.SetProviderId(Constants.ProviderId, System.Convert.ToString(film.Id));
+        target.Item.SetProviderId(Constants.ProviderName, film.Kid);
         target.Item.Name = film.Title.Russian;
         target.Item.OriginalTitle = film.Title.Original;
         target.Item.ProductionYear = film.ProductionYear;
@@ -131,18 +132,23 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
         foreach (var genre in film.Genres)
             target.Item.AddGenre(genre.Slug);
 
-        void AddPerson(PersonKind Type, FilmInfo.FilmCrewMembers.FilmCrewMember Crew)
+        void AddCrew(PersonKind Type, FilmInfo.FilmCrewMembers members)
         {
-            if (Crew?.Person?.Name == null) return;
-            target.AddPerson(new PersonInfo { Name = Crew.Person.Name, Type = Type });
+            foreach (var crew in members?.Items ?? [])
+            {
+                if (crew?.Person?.Name == null) return;
+                target.AddPerson(new PersonInfo { Name = crew.Person.Name, Type = Type });
+            }
         }
 
-        foreach (var person in film.Actors.Items) AddPerson(PersonKind.Actor, person);
-        foreach (var person in film.Directors.Items) AddPerson(PersonKind.Director, person);
-        foreach (var person in film.Writers.Items) AddPerson(PersonKind.Writer, person);
-        foreach (var person in film.Producers.Items) AddPerson(PersonKind.Producer, person);
-        foreach (var person in film.Composers.Items) AddPerson(PersonKind.Composer, person);
-        foreach (var person in film.FilmEditors.Items) AddPerson(PersonKind.Editor, person);
+        AddCrew(PersonKind.Actor, film.Actors);
+        AddCrew(PersonKind.Director, film.Directors);
+        AddCrew(PersonKind.Writer, film.Writers);
+        AddCrew(PersonKind.Producer, film.Producers);
+        AddCrew(PersonKind.Composer, film.Composers);
+        AddCrew(PersonKind.Editor, film.FilmEditors);
+
+        target.HasMetadata = true;
 
         return;
     }
