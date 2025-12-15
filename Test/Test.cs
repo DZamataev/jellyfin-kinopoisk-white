@@ -1,18 +1,17 @@
 using Xunit;
 using System.Linq;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 
 using Plugin.Api;
-using Plugin.Common;
+using Plugin.Extensions;
 
 namespace Tests; 
 
 
-public class TransliterationTests {
+public class Test {
     private readonly KinopoiskApi _api;
-    public TransliterationTests()
+    public Test()
     {
         var services = new ServiceCollection();
         services.AddHttpClient();
@@ -41,9 +40,9 @@ public class TransliterationTests {
     [InlineData("2001.A.Space.Odyssey.1968.1080p.BluRay.x264-[YTS.AM].mp4", "2001 A Space Odyssey", 1968, 0)]
     // position = 1
     [InlineData("Бумер Фильм второй_745.avi", "Бумер Фильм второй", null, 1)]
-    [InlineData("Blade.Runner.2054.mp4", "Blade Runner 2054", null, 1)]
-    [InlineData("04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv", "Сумерки Сага Рассвет Часть 1", 2011, 1)]
     // position = 2
+    [InlineData("Blade.Runner.2054.mp4", "Blade Runner 2054", null, 2)]
+    [InlineData("04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv", "Сумерки Сага Рассвет Часть 1", 2011, 2)]
     // [InlineData("Walk.the.Line.EXTENDED.2005.1080p.BrRip.x264.YIFY.mp4", "Walk the Line", 2005)]
     // [InlineData("Rock.n.Rolla.brrip.mkv", "Rock n Rolla", null)]
     public void ShouldGetListOfTitles(string path, string exTitle, int? exYear, int exPosition = 0)

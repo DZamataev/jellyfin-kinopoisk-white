@@ -1,12 +1,10 @@
 using System.Linq;
-using System.Text.Json;
 using System.Collections.Generic;
-using MediaBrowser.Controller.Entities.Movies;
 using System.Text.RegularExpressions;
 
-namespace Plugin.Common;
+namespace Plugin.Extensions;
 
-public static partial class Extensions
+public static partial class StringExtensions
 {
 
     [GeneratedRegex(@"[^\w]+|[_\s]")]

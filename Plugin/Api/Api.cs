@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Plugin.Api;
-using Common;
+using Extensions;
 
 public class KinopoiskApi
 {

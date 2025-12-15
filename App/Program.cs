@@ -3,8 +3,7 @@ using MediaBrowser.Controller.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 using Plugin.Api;
-using Plugin.Common;
-using Plugin.Providers;
+using Plugin.Extensions;
 
 namespace App; 
 
@@ -46,7 +45,7 @@ class Program {
         {
             Item = new Movie()
         };
-        KinopoiskItemProvider.Fill(meta, result);
+        meta.Fill(result);
         Console.WriteLine("Finished");
     }
 }

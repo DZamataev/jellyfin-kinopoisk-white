@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-using Jellyfin.Data.Enums;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Controller.Entities;
@@ -15,6 +14,7 @@ using MediaBrowser.Controller.Entities.Movies;
 namespace Plugin.Providers;
 using Api;
 using Common;
+using Extensions;
 
 public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 {
@@ -74,7 +74,7 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
 
         var meta = await _api.FetchByKid(kid, cancellationToken);
 
-        Fill(meta, result);
+        meta.Fill(result);
 
         _logger.LogInformation("Metadata loaded for {kid}", kid);
 
@@ -108,46 +108,4 @@ public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
     => _httpClientFactory
         .CreateClient(MediaBrowser.Common.Net.NamedClient.Default)
         .GetAsync(url, cancellationToken);
-
-    public static void
-    Fill<T>(FilmInfo film, MetadataResult<T> target) where T : BaseItem
-    {
-        target.Item.SetProviderId(Constants.ProviderId, film.Kid);
-
-        if (!string.IsNullOrEmpty(film.ContentId))
-            target.Item.SetProviderId(Constants.ProviderName, film.ContentId);
-
-        target.Item.Name = film.Title.Russian;
-        target.Item.OriginalTitle = film.Title.Original;
-        target.Item.ProductionYear = film.ProductionYear;
-        target.Item.CommunityRating = film.Rating.Community;
-        target.Item.CriticRating = film.Rating.Critics;
-        target.Item.CustomRating = film.Restriction?.Rating;
-
-        target.Item.Tagline = film.ShortDescription;
-        target.Item.Overview = film.Synopsis;
-
-        foreach (var genre in film.Genres)
-            target.Item.AddGenre(genre.Slug);
-
-        void AddCrew(PersonKind Type, FilmInfo.FilmCrewMembers members)
-        {
-            foreach (var crew in members?.Items ?? [])
-            {
-                if (crew?.Person?.Name == null) return;
-                target.AddPerson(new PersonInfo { Name = crew.Person.Name, Type = Type });
-            }
-        }
-
-        AddCrew(PersonKind.Actor, film.Actors);
-        AddCrew(PersonKind.Director, film.Directors);
-        AddCrew(PersonKind.Writer, film.Writers);
-        AddCrew(PersonKind.Producer, film.Producers);
-        AddCrew(PersonKind.Composer, film.Composers);
-        AddCrew(PersonKind.Editor, film.FilmEditors);
-
-        target.HasMetadata = true;
-
-        return;
-    }
 }
