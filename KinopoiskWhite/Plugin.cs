@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
@@ -13,8 +15,8 @@ using MediaBrowser.Controller.Entities.TV;
 
 namespace KinopoiskWhite;
 
+using Api;
 using Common;
-using KinopoiskWhite.Api;
 using Providers;
 
 public class KinopoiskWhitePlugin : BasePlugin<PluginConfiguration>
@@ -49,9 +51,31 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton<GraphQL, GraphQL>();
-        serviceCollection.AddSingleton<KinopoiskApi, KinopoiskApi>();
-        serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider<Movie>>();
+        serviceCollection.AddSingleton<IGraphQL, GraphQL>();
+        serviceCollection.AddSingleton<IApiService, ApiService>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IImageProvider, RemoteImageProvider<Movie>>();
+    }
+}
+
+public abstract class Base {
+    #pragma warning disable CA1822 // Mark members as static
+    public string Name => Constants.ProviderName;
+    public string Description => Constants.ProviderDescription;
+    #pragma warning restore CA1822 // Mark members as static
+}
+
+public abstract class BaseSingleton: Base {
+    protected readonly ILogger _logger;
+    protected readonly IHttpClientFactory _httpClientFactory;
+
+    protected BaseSingleton (
+        ILogger logger,
+        IHttpClientFactory httpClientFactory)
+    {
+        _logger = logger;
+        _httpClientFactory = httpClientFactory;
+
+        _logger?.LogInformation("INIT");
     }
 }

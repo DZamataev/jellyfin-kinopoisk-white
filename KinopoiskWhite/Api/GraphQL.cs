@@ -3,18 +3,28 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace KinopoiskWhite.Api;
 using Common;
 using Models;
 
-public class GraphQL
+public interface IGraphQL
 {
-    public readonly HttpClient _client;
+    Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken);
+    Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
+    Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
+    Task<FilmInfo> MovieImagesItems(int id, string type, CancellationToken cancellationToken);
+}
+
+public class GraphQL : BaseSingleton, IGraphQL
+{
+    private readonly HttpClient _client;
     private readonly TaskQueue _queue;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GraphQL(IHttpClientFactory httpClientFactory = null)
+    public GraphQL(ILogger<GraphQL> logger, IHttpClientFactory httpClientFactory)
+    : base(logger, httpClientFactory)
     {
         _queue = new TaskQueue();
 
@@ -26,15 +36,16 @@ public class GraphQL
         _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
         _client.DefaultRequestHeaders.Add("service-id", "25");
 
-        _jsonOptions = new JsonSerializerOptions {
+        _jsonOptions = new JsonSerializerOptions
+        {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
     }
 
     private static string GetEmbeddedQuery(string fileName)
     {
-        var assembly = typeof(KinopoiskApi).Assembly;
-        var resourceName = $"KinopoiskWhite.Api.Queries.{fileName}.gql";
+        var assembly = typeof(GraphQL).Assembly;
+        var resourceName = $"Plugin.Api.Queries.{fileName}.gql";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null) throw new FileNotFoundException($"Resource {resourceName} not found");
@@ -43,14 +54,15 @@ public class GraphQL
         return reader.ReadToEnd();
     }
 
-    public async Task<JsonDocument> Call(string operationName, object variables, CancellationToken cancellationToken)
+    private async Task<JsonDocument> Call(string operationName, object variables, CancellationToken cancellationToken)
     {
         var query = GetEmbeddedQuery(operationName);
         var request = new { operationName, variables, query };
         var json = JsonSerializer.Serialize(request);
 
         var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        var response = await _queue.Enqueue( async () => {
+        var response = await _queue.Enqueue(async () =>
+        {
             await Task.Delay(10); // minimal threshold
 
             return await _client.PostAsync("/graphql", data, cancellationToken);
@@ -68,7 +80,7 @@ public class GraphQL
         return doc;
     }
 
-    public async Task<FilmInfo> Call(
+    private async Task<FilmInfo> Call(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {

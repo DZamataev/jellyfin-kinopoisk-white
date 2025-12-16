@@ -8,6 +8,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 
 namespace KinopoiskWhite.Providers;
+using Api;
 using Common;
 using Extensions;
 
@@ -15,9 +16,10 @@ using Extensions;
 public abstract class RemoteMetadataProvider<TItemType, TLookupInfoType>
 (
     ILogger<RemoteMetadataProvider<TItemType, TLookupInfoType>> logger,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IApiService api
 ) :
-    SearchProvider<TLookupInfoType>(logger, httpClientFactory),
+    SearchProvider<TLookupInfoType>(logger, httpClientFactory, api),
     IRemoteMetadataProvider<TItemType, TLookupInfoType>
 
 where TItemType : BaseItem, IHasLookupInfo<TLookupInfoType>
@@ -67,9 +69,10 @@ where TLookupInfoType : ItemLookupInfo, new()
 public class MovieMetadataProvider
 (
     ILogger<MovieMetadataProvider> logger,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IApiService api
 ) :
-    RemoteMetadataProvider<Movie, MovieInfo>(logger, httpClientFactory)
+    RemoteMetadataProvider<Movie, MovieInfo>(logger, httpClientFactory, api)
 {
     protected override Movie GetItem() => new ();
 }

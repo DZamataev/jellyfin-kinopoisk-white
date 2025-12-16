@@ -3,16 +3,29 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace KinopoiskWhite.Api;
+using Providers;
 using Models;
 using Extensions;
+using Microsoft.Extensions.Logging;
 
-public class KinopoiskApi
+public interface IApiService
 {
-    private readonly GraphQL _graphql;
+    Task<FilmInfo> FetchByCid(string contentId, CancellationToken cancellationToken);
+    Task<FilmInfo> FetchByKid(string kinopoiskId, CancellationToken cancellationToken);
+    Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
+}
 
-    public KinopoiskApi(IHttpClientFactory httpClientFactory = null, GraphQL graphQL = null)
+public class ApiService : BaseSingleton, IApiService
+{
+    private readonly IGraphQL _graphql;
+
+    public ApiService(
+        ILogger<ApiService> logger,
+        IHttpClientFactory httpClientFactory = null,
+        IGraphQL graphQL = null)
+    : base(logger, httpClientFactory)
     {
-        _graphql = graphQL ?? new GraphQL(httpClientFactory);
+        _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
     }
 
     public async Task<FilmInfo>

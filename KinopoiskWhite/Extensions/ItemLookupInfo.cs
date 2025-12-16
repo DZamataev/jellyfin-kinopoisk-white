@@ -33,5 +33,7 @@ public static class ItemLookupInfoExtensions
     => info.TryGetProviderId(ContentId, out cid);
 
     public static void SetContentId(this IHasProviderIds info, string cid)
-    => info.SetProviderId(ContentId, cid);
+    {
+        if (cid != null) info.SetProviderId(ContentId, cid);
+    }
 }

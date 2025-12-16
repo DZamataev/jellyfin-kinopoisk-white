@@ -1,24 +1,24 @@
 using Xunit;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http;
 
 using KinopoiskWhite.Api;
 using KinopoiskWhite.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Tests; 
 
 
 public class Test {
-    private readonly KinopoiskApi _api;
+    private readonly ApiService _api;
     public Test()
     {
-        var services = new ServiceCollection();
-        services.AddHttpClient();
-        var sp = services.BuildServiceProvider();
+        // var services = new ServiceCollection();
+        // services.AddLogging();
+        // var sp = services.BuildServiceProvider();
+        // sp.GetRequiredService<ILogger<ApiService>>()
 
-        _api = new KinopoiskApi(
-            sp.GetRequiredService<IHttpClientFactory>()
+        _api = new ApiService(
+            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiService>()
         );
     }
 

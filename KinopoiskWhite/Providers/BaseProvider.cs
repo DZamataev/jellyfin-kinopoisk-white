@@ -6,28 +6,16 @@ using Microsoft.Extensions.Logging;
 namespace KinopoiskWhite.Providers;
 
 using Api;
-using Common;
 
-public abstract class BaseProvider
+
+public abstract class BaseProvider: BaseSingleton
 {
-    #pragma warning disable CA1822 // Mark members as static
-    public string Name => Constants.ProviderName;
-    public string Description => Constants.ProviderDescription;
-    #pragma warning restore CA1822 // Mark members as static
+    protected readonly IApiService _api;
 
-    protected readonly ILogger _logger;
-    protected readonly IHttpClientFactory _httpClientFactory;
-    protected readonly KinopoiskApi _api;
-
-    public BaseProvider(
-        ILogger<BaseProvider> logger,
-        IHttpClientFactory httpClientFactory,
-        KinopoiskApi api = null)
+    protected BaseProvider(ILogger logger, IHttpClientFactory httpClientFactory, IApiService api)
+    : base(logger, httpClientFactory)
     {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-        _api = api ?? new KinopoiskApi(httpClientFactory);
-        _logger.LogInformation("INIT {api}", api);
+        _api = api;
     }
 
     public Task<HttpResponseMessage>

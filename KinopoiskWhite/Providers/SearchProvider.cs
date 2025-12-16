@@ -9,12 +9,14 @@ using MediaBrowser.Model.Providers;
 using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers;
+using Api;
 
 public abstract class SearchProvider<TLookupInfoType>(
     ILogger<SearchProvider<TLookupInfoType>> logger,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IApiService api
 ) :
-    BaseProvider(logger, httpClientFactory),
+    BaseProvider(logger, httpClientFactory, api),
     IRemoteSearchProvider<TLookupInfoType>
 where TLookupInfoType : ItemLookupInfo, new()
 {

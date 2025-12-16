@@ -7,7 +7,7 @@ using KinopoiskWhite.Extensions;
 namespace App; 
 
 class Program {
-    private static KinopoiskApi _api;
+    private static ApiService _api;
     private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
@@ -19,7 +19,7 @@ class Program {
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
         // );
-        _api = new KinopoiskApi();
+        _api = new ApiService(null);
     }
 
     static async Task Main(string[] args) {

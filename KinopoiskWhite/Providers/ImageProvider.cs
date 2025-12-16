@@ -11,16 +11,18 @@ using MediaBrowser.Model.Providers;
 
 namespace KinopoiskWhite.Providers;
 
+using Api;
 using Api.Models;
 using Extensions;
 
 public class RemoteImageProvider<TItemType>
 (
     ILogger<RemoteImageProvider<TItemType>> logger,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IApiService api
 ) :
-    BaseProvider(logger, httpClientFactory),
-    IRemoteImageProvider
+    BaseProvider(logger, httpClientFactory, api),
+    IImageProvider
 where TItemType : BaseItem
 {
     public bool Supports(BaseItem item) => item is TItemType;
