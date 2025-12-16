@@ -9,7 +9,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 
-namespace Plugin.Providers;
+namespace KinopoiskWhite.Providers;
 
 using Api.Models;
 using Extensions;

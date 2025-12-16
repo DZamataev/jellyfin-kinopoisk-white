@@ -2,7 +2,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Plugin.Api;
+namespace KinopoiskWhite.Api;
 using Models;
 using Extensions;
 

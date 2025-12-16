@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Plugin.Api.Models;
+namespace KinopoiskWhite.Api.Models;
 
 public record FilmInfo
 {

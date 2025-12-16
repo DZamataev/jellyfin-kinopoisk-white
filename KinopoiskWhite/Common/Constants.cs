@@ -1,4 +1,4 @@
-namespace Plugin.Common {
+namespace KinopoiskWhite.Common {
     public static class Constants {
         public const string ProviderId = "kinopoisk";
         public const string ProviderName = "КиноПоиск (белый список)";

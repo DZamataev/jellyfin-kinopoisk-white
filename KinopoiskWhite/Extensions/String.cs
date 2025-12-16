@@ -2,7 +2,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Plugin.Extensions;
+namespace KinopoiskWhite.Extensions;
 
 public static partial class StringExtensions
 {

@@ -3,8 +3,8 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http;
 
-using Plugin.Api;
-using Plugin.Extensions;
+using KinopoiskWhite.Api;
+using KinopoiskWhite.Extensions;
 
 namespace Tests; 
 

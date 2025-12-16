@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 
-namespace Plugin.Extensions;
+namespace KinopoiskWhite.Extensions;
 
 using Api.Models;
 using Common;

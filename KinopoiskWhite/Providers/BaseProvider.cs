@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Plugin.Providers;
+namespace KinopoiskWhite.Providers;
 
 using Api;
 using Common;
@@ -27,6 +27,7 @@ public abstract class BaseProvider
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _api = api ?? new KinopoiskApi(httpClientFactory);
+        _logger.LogInformation("INIT {api}", api);
     }
 
     public Task<HttpResponseMessage>

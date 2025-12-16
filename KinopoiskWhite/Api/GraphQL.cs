@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Plugin.Api;
+namespace KinopoiskWhite.Api;
 using Common;
 using Models;
 
@@ -34,7 +34,7 @@ public class GraphQL
     private static string GetEmbeddedQuery(string fileName)
     {
         var assembly = typeof(KinopoiskApi).Assembly;
-        var resourceName = $"Plugin.Api.Queries.{fileName}.gql";
+        var resourceName = $"KinopoiskWhite.Api.Queries.{fileName}.gql";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null) throw new FileNotFoundException($"Resource {resourceName} not found");

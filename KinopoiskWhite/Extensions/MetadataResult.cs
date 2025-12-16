@@ -2,7 +2,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 
-namespace Plugin.Extensions;
+namespace KinopoiskWhite.Extensions;
 
 using Api.Models;
 

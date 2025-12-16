@@ -11,10 +11,10 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 
-namespace Plugin;
+namespace KinopoiskWhite;
 
 using Common;
-using Plugin.Api;
+using KinopoiskWhite.Api;
 using Providers;
 
 public class KinopoiskWhitePlugin : BasePlugin<PluginConfiguration>
@@ -49,8 +49,8 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton<GraphQL>();
-        serviceCollection.AddSingleton<KinopoiskApi>();
+        serviceCollection.AddSingleton<GraphQL, GraphQL>();
+        serviceCollection.AddSingleton<KinopoiskApi, KinopoiskApi>();
         serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider<Movie>>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
     }

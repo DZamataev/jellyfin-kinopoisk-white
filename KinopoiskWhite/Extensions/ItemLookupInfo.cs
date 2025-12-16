@@ -1,6 +1,6 @@
 using MediaBrowser.Model.Entities;
 
-namespace Plugin.Extensions;
+namespace KinopoiskWhite.Extensions;
 
 using Common;
 

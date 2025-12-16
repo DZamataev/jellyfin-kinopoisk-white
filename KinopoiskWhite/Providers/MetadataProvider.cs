@@ -7,7 +7,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 
-namespace Plugin.Providers;
+namespace KinopoiskWhite.Providers;
 using Common;
 using Extensions;
 

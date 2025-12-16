@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Controller.Providers;
 
-namespace Plugin.Providers;
+namespace KinopoiskWhite.Providers;
 
 public abstract class SearchProvider<TLookupInfoType>(
     ILogger<SearchProvider<TLookupInfoType>> logger,

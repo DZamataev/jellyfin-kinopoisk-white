@@ -11,13 +11,13 @@
     <PackageReference Include="coverlet.collector" Version="3.2.0" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
 
-    <EmbeddedResource Include="..\Plugin\Api\Queries\*.gql">
+    <EmbeddedResource Include="..\KinopoiskWhite\Api\Queries\*.gql">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Plugin\Plugin.csproj" />
+    <ProjectReference Include="..\KinopoiskWhite\Plugin.csproj" />
   </ItemGroup>
 
 </Project>

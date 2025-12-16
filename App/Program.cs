@@ -1,8 +1,8 @@
 ﻿using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 
-using Plugin.Api;
-using Plugin.Extensions;
+using KinopoiskWhite.Api;
+using KinopoiskWhite.Extensions;
 
 namespace App; 
 
