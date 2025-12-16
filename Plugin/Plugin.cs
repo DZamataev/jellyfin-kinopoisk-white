@@ -14,9 +14,10 @@ using MediaBrowser.Controller.Entities.TV;
 namespace Plugin;
 
 using Common;
+using Plugin.Api;
 using Providers;
 
-public class KinopoiskWhitePlugin : BasePlugin<KinopoiskWhitePluginConfiguration>
+public class KinopoiskWhitePlugin : BasePlugin<PluginConfiguration>
 {
     public static KinopoiskWhitePlugin Instance { get; private set; }
     public override string Name => Constants.ProviderName;
@@ -30,27 +31,27 @@ public class KinopoiskWhitePlugin : BasePlugin<KinopoiskWhitePluginConfiguration
     }
 }
 
-public class KinopoiskWhitePluginConfiguration : BasePluginConfiguration
+public class PluginConfiguration : BasePluginConfiguration
 {
     public bool EnableLogging { get; set; } = true;
 }
 
-public record KinopoiskExternalId : IExternalId
+public record ExternalId : IExternalId
 {
-    public string ProviderName => Constants.ProviderName;
     public string Key => Constants.ProviderId;
+    public string ProviderName => Constants.ProviderName;
     public string UrlFormatString => "https://www.kinopoisk.ru/film/{0}";
     public ExternalIdMediaType? Type => null;
-    public bool Supports(IHasProviderIds item)
-    {
-        return item is Movie || item is Series;
-    }
+    public bool Supports(IHasProviderIds item) => item is Movie || item is Series;
 }
 
-public class KinopoiskWhitePluginServiceRegistrator : IPluginServiceRegistrator
+public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, KinopoiskItemProvider>();
+        serviceCollection.AddSingleton<GraphQL>();
+        serviceCollection.AddSingleton<KinopoiskApi>();
+        serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider<Movie>>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
     }
 }

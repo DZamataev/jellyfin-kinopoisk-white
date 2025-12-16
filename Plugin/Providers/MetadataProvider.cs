@@ -1,111 +1,75 @@
-using System.Linq;
 using System.Net.Http;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Providers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 
 namespace Plugin.Providers;
-using Api;
 using Common;
 using Extensions;
 
-public class KinopoiskItemProvider : IRemoteMetadataProvider<Movie, MovieInfo>
+
+public abstract class RemoteMetadataProvider<TItemType, TLookupInfoType>
+(
+    ILogger<RemoteMetadataProvider<TItemType, TLookupInfoType>> logger,
+    IHttpClientFactory httpClientFactory
+) :
+    SearchProvider<TLookupInfoType>(logger, httpClientFactory),
+    IRemoteMetadataProvider<TItemType, TLookupInfoType>
+
+where TItemType : BaseItem, IHasLookupInfo<TLookupInfoType>
+where TLookupInfoType : ItemLookupInfo, new()
 {
-    public string Name => Constants.ProviderName;
-    public static string Description => Constants.ProviderDescription;
+    protected abstract TItemType GetItem();
 
-    private readonly ILogger _logger;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly KinopoiskApi _api;
-
-    public KinopoiskItemProvider(ILogger<KinopoiskItemProvider> logger, IHttpClientFactory httpClientFactory)
+    public async Task<MetadataResult<TItemType>>
+    GetMetadata(TLookupInfoType info, CancellationToken cancellationToken)
     {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-        _api = new KinopoiskApi(httpClientFactory);
+        var result = await ResolveInfo(info, cancellationToken);
+
+        result.Item = GetItem();
+
+        result.FillFrom(await _api.FetchByKid(info.GetDefaultId(), cancellationToken));
+
+        _logger.LogInformation("Metadata loaded for {item}", info.Name);
+
+        return result;
     }
 
-    public Task<MetadataResult<Movie>>
-    GetMetadata(MovieInfo info, CancellationToken cancellationToken)
-    => GetResult<Movie>(info, cancellationToken);
-
-    private async Task<MetadataResult<T>>
-    GetResult<T>(ItemLookupInfo info, CancellationToken cancellationToken)
-    where T : BaseItem, new()
+    async Task<MetadataResult<TItemType>>
+    ResolveInfo(TLookupInfoType info, CancellationToken cancellationToken)
     {
-        var result = new MetadataResult<T>
+        var result = new MetadataResult<TItemType>
         {
-            Item = new T(),
             QueriedById = true,
             Provider = Constants.ProviderName,
             ResultLanguage = Constants.ProviderMetadataLanguage,
         };
 
-        var kid = info.GetProviderId(Constants.ProviderId);
+        if (info.HasDefaultId()) return result;
 
-        if (string.IsNullOrWhiteSpace(kid))
-        {
-            _logger.LogDebug("KID is empty {item}", info.Name);
+        _logger.LogDebug("KID is empty {item}", info.Name);
 
-            result.QueriedById = false;
+        result.QueriedById = false;
 
-            try
-            {
-                var key = await _api.GetKinopoiskId(info.Path, cancellationToken);
+        result.FillFrom(await _api.GetKinopoiskId(info.Path, cancellationToken));
 
-                _logger.LogInformation("Found KID {kid} [{cid}] for {item}",
-                                       key.Kid, key.ContentId, info.Name);
-                kid = key.Kid;
-            }
-            catch
-            {
-                _logger.LogError("KID not found for {item}", info.Name);
-            }
-        }
-
-        if (string.IsNullOrEmpty(kid)) return result;
-
-        var meta = await _api.FetchByKid(kid, cancellationToken);
-
-        meta.Fill(result);
-
-        _logger.LogInformation("Metadata loaded for {kid}", kid);
+        _logger.LogInformation("Found item {0} as {1}", info.Name, result.Item.Name);
 
         return result;
     }
+}
 
-    public Task<IEnumerable<RemoteSearchResult>>
-    GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("GetSearchResults");
 
-        if (string.IsNullOrEmpty(searchInfo.Name))
-        {
-            _logger.LogError("GetSearchResults EMPTY");
-            return Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
-        }
-
-        var results = new List<RemoteSearchResult> {
-            new() {
-                Name = searchInfo.Name,
-                ProductionYear = searchInfo.Year ?? 2033,
-                ProviderIds = new Dictionary<string, string> { { "TestProvider", $"test-{searchInfo.Name}" } }
-            }
-        };
-
-        return Task.FromResult<IEnumerable<RemoteSearchResult>>(results);
-    }
-
-    public Task<HttpResponseMessage>
-    GetImageResponse(string url, CancellationToken cancellationToken)
-    => _httpClientFactory
-        .CreateClient(MediaBrowser.Common.Net.NamedClient.Default)
-        .GetAsync(url, cancellationToken);
+public class MovieMetadataProvider
+(
+    ILogger<MovieMetadataProvider> logger,
+    IHttpClientFactory httpClientFactory
+) :
+    RemoteMetadataProvider<Movie, MovieInfo>(logger, httpClientFactory)
+{
+    protected override Movie GetItem() => new ();
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Plugin.Api;
 using Common;
+using Models;
 
 public class GraphQL
 {
@@ -13,11 +14,15 @@ public class GraphQL
     private readonly TaskQueue _queue;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GraphQL(IHttpClientFactory httpClientFactory)
+    public GraphQL(IHttpClientFactory httpClientFactory = null)
     {
         _queue = new TaskQueue();
 
-        _client = httpClientFactory.CreateClient();
+        if (httpClientFactory == null)
+            _client = new HttpClient();
+        else
+            _client = httpClientFactory.CreateClient();
+
         _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
         _client.DefaultRequestHeaders.Add("service-id", "25");
 

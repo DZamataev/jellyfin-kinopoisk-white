@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Plugin.Api;
+namespace Plugin.Api.Models;
 
 public record FilmInfo
 {

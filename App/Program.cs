@@ -1,6 +1,5 @@
 ﻿using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
-using Microsoft.Extensions.DependencyInjection;
 
 using Plugin.Api;
 using Plugin.Extensions;
@@ -13,13 +12,14 @@ class Program {
     
     private static void Prepare()
     {
-        var services = new ServiceCollection();
-        services.AddHttpClient();
-        var sp = services.BuildServiceProvider();
+        // var services = new ServiceCollection();
+        // services.AddHttpClient();
+        // var sp = services.BuildServiceProvider();
 
-        _api = new KinopoiskApi(
-            sp.GetRequiredService<IHttpClientFactory>()
-        );
+        // _api = new KinopoiskApi(
+        //     sp.GetRequiredService<IHttpClientFactory>()
+        // );
+        _api = new KinopoiskApi();
     }
 
     static async Task Main(string[] args) {
@@ -45,7 +45,7 @@ class Program {
         {
             Item = new Movie()
         };
-        meta.Fill(result);
+        result.FillFrom(meta);
         Console.WriteLine("Finished");
     }
 }

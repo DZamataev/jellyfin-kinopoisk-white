@@ -3,15 +3,16 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Plugin.Api;
+using Models;
 using Extensions;
 
 public class KinopoiskApi
 {
     private readonly GraphQL _graphql;
 
-    public KinopoiskApi(IHttpClientFactory httpClientFactory)
+    public KinopoiskApi(IHttpClientFactory httpClientFactory = null, GraphQL graphQL = null)
     {
-        _graphql = new GraphQL(httpClientFactory);
+        _graphql = graphQL ?? new GraphQL(httpClientFactory);
     }
 
     public async Task<FilmInfo>

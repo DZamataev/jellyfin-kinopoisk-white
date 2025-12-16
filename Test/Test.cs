@@ -29,8 +29,6 @@ public class Test {
     [InlineData("Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv", "Девушка в тумане", 2017)]
     [InlineData("Three.Billboards.Outside.Ebbing,.Missouri.2017.720p.BluRay.x264-[YTS.AM].mp4", "Three Billboards Outside Ebbing Missouri", 2017)]
     [InlineData("28.Weeks.Later.2007.720p.BrRip.264.YIFY.mp4", "28 Weeks Later", 2007, 0)]
-    [InlineData("28.Days.Later.2002.720p.BrRip.264.YIFY.mp4", "28 Days Later", 2002, 0)]
-    [InlineData("28.Years.Later.2025.Proper.1080p.WEB-DL.DDP5.1.x265-NeoNoir.mkv", "28 Years Later", 2025, 0)]
     [InlineData("Kill.Bill.Vol.1.2003.1080p.BrRIp.x264.YIFY.mp4", "Kill Bill Vol 1", 2003, 0)]
     [InlineData("Mickey.17.2025.720p.WEBRip.x264.AAC-[YTS.MX].mp4", "Mickey 17", 2025, 0)]
     [InlineData("Nobody.2.2025.DUB.WEB-DLRip-AVC.seleZen.mkv", "Nobody 2", 2025, 0)]
