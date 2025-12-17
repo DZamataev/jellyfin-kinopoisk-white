@@ -10,9 +10,9 @@ using Microsoft.Extensions.Logging;
 
 public interface IApiService
 {
-    Task<FilmInfo> FetchByCid(string contentId, CancellationToken cancellationToken);
-    Task<FilmInfo> FetchByKid(string kinopoiskId, CancellationToken cancellationToken);
     Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
+    Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
+    Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
 }
 
 public class ApiService : BaseSingleton, IApiService
@@ -56,17 +56,17 @@ public class ApiService : BaseSingleton, IApiService
     }
 
     public async Task<FilmInfo>
-    FetchByKid(string kinopoiskId, CancellationToken cancellationToken)
+    Fetch(int kinopoiskId, CancellationToken cancellationToken)
     {
         var film = await _graphql
-            .FilmBaseInfo(System.Convert.ToInt32(kinopoiskId), cancellationToken);
+            .FilmBaseInfo(kinopoiskId, cancellationToken);
 
         return film ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed KID {kinopoiskId}");
     }
 
     public async Task<FilmInfo>
-    FetchByCid(string contentId, CancellationToken cancellationToken)
+    FetchByContentId(string contentId, CancellationToken cancellationToken)
     {
         var film = await _graphql
             .FilmPage(contentId, cancellationToken);
@@ -74,4 +74,14 @@ public class ApiService : BaseSingleton, IApiService
         return film ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed CID {contentId}");
     }
+
+    // public async Task
+    // GetImages(string kid, CancellationToken cancellationToken)
+    // {
+    //     var film = await _graphql
+    //         .FilmPage(contentId, cancellationToken);
+
+    //     return film ?? throw new System.Exception(
+    //         $"Get Kinopoisk metadata failed CID {contentId}");
+    // }
 }

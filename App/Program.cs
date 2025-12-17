@@ -37,9 +37,9 @@ class Program {
             Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
         };
         var meta = await _api.GetKinopoiskId(info.Path, _token);
-        meta = await _api.FetchByKid(meta.Kid, _token);
+        meta = await _api.Fetch(meta.Id, _token);
         Console.WriteLine($"{meta.Title}");
-        meta = await _api.FetchByCid(meta.ContentId, _token);
+        meta = await _api.FetchByContentId(meta.ContentId, _token);
         Console.WriteLine($"{meta.Title}");
         var result = new MetadataResult<Movie>()
         {

@@ -27,7 +27,7 @@ public class RemoteImageProvider
     IRemoteImageProvider
 {
     public bool Supports(BaseItem item) => item is Movie;
-    private Dictionary<string, Cache> _cache = [];
+    private readonly Dictionary<int, Cache> _cache = [];
 
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
     [
@@ -39,14 +39,14 @@ public class RemoteImageProvider
     public async Task<IEnumerable<RemoteImageInfo>>
     GetImages(BaseItem item, CancellationToken cancellationToken)
     {
-        if (!item.TryGetDefaultId(out string kid)) return [];
+        if (!item.TryGetDefaultId(out int kid)) return [];
 
         if (_cache.TryGetValue(kid, out Cache cache))
             _logger.LogDebug("Getting cached images by {kid}", kid);
         else
         {
             _logger.LogDebug("Loading images by {kid}", kid);
-            var meta = await _api.FetchByKid(kid, cancellationToken).ConfigureAwait(false);
+            var meta = await _api.Fetch(kid, cancellationToken).ConfigureAwait(false);
             cache = meta.GetCache();
             _cache[kid] = cache;
         }

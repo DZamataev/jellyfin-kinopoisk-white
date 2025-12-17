@@ -11,7 +11,7 @@ public static class MetadataResultExtensions
     public static void
     FillFrom(this BaseItem item, FilmInfo metadata)
     {
-        item.SetDefaultId(metadata.Kid);
+        item.SetDefaultId(metadata.Id);
         item.SetContentId(metadata.ContentId);
 
         item.Name = metadata.Title.Russian;

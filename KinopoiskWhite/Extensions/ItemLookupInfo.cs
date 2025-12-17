@@ -12,14 +12,19 @@ public static class ItemLookupInfoExtensions
     public static bool HasDefaultId(this IHasProviderIds info)
     => info.HasProviderId(DefaultId);
 
-    public static string GetDefaultId(this IHasProviderIds info)
-    => info.GetProviderId(DefaultId);
+    public static int GetDefaultId(this IHasProviderIds info)
+    => System.Convert.ToInt32(info.GetProviderId(DefaultId));
 
-    public static bool TryGetDefaultId(this IHasProviderIds info, out string kid)
-    => info.TryGetProviderId(DefaultId, out kid);
+    public static bool TryGetDefaultId(this IHasProviderIds info, out int kid)
+    {
+        var result = info.TryGetProviderId(DefaultId, out string value);
+        kid = System.Convert.ToInt32(value);
+        return result;
+    }
 
-    public static void SetDefaultId(this IHasProviderIds info, string kid)
-    => info.SetProviderId(DefaultId, kid);
+    public static void SetDefaultId(this IHasProviderIds info, int kid)
+    => info.SetProviderId(DefaultId, System.Convert.ToString(kid));
+
 
     private static readonly string ContentId = Constants.ProviderName;
 

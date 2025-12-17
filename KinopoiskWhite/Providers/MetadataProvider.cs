@@ -34,7 +34,7 @@ where TLookupInfoType : ItemLookupInfo, new()
 
         result.Item = GetItem();
 
-        result.FillFrom(await _api.FetchByKid(info.GetDefaultId(), cancellationToken));
+        result.FillFrom(await _api.Fetch(info.GetDefaultId(), cancellationToken));
 
         _logger.LogInformation("Metadata loaded for {item}", info.Name);
 

@@ -31,8 +31,6 @@ public record FilmInfo
     public record FilmTitle(string Russian = "", string Original = "");
     public record Genre(string Name = "", string Slug = "");
 
-    public string Kid => System.Convert.ToString(Id);
-
     public record FilmRestriction
     {
         public string Age { get; init; } = "";
