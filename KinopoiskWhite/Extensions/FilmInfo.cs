@@ -8,18 +8,56 @@ namespace KinopoiskWhite.Extensions;
 
 using Api.Models;
 using Common;
-using Cache = Dictionary<ImageType, string[]>;
+using Cache = Dictionary<ImageType, List<string>>;
 
 public static class FilmInfoExtensions
 {
+    private static Dictionary<FilmImageType, ImageType> Mapper = new() {
+        {FilmImageType.POSTER, ImageType.Primary},
+        {FilmImageType.COVER, ImageType.Box},
+        {FilmImageType.STILL, ImageType.BoxRear},
+        {FilmImageType.WALLPAPER, ImageType.Backdrop},
+        {FilmImageType.SCREENSHOT, ImageType.Screenshot},
+        {FilmImageType.SHOOTING, ImageType.Backdrop},
+        {FilmImageType.FAN_ART, ImageType.Art},
+        {FilmImageType.PROMO, ImageType.Banner},
+        {FilmImageType.CONCEPT, ImageType.Box},
+    };
+
+    private static TValue
+    GetOrAddDefault<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
+    {
+        if (dict.TryGetValue(key, out var value))
+            return value;
+        
+        dict[key] = defaultValue;
+        return defaultValue;
+    }
+
     public static Cache GetCache(this FilmInfo metadata)
     {
         Cache result = [];
-        if (metadata.Gallery == null) return result;
+        var gallery = metadata?.Gallery;
+        if (gallery != null)
+        {
+            result[ImageType.Primary] = [ gallery?.Primary ];
+            result[ImageType.Backdrop] = [ gallery?.Backdrop ];
+            result[ImageType.Logo] = [ gallery?.Logo ];
+        }
+        var items = metadata?.Images?.Items;
+        if (items != null)
+        {
+            foreach (var item in items)
+            {
+                if (!FilmImageType.TryParse(item.Type, false, out FilmImageType ftype)) continue;
+                if (!Mapper.TryGetValue(ftype, out ImageType otype)) continue;
 
-        result[ImageType.Primary] = [ metadata.Gallery?.Primary ];
-        result[ImageType.Backdrop] = [ metadata.Gallery?.Backdrop ];
-        result[ImageType.Logo] = [ metadata.Gallery?.Logo ];
+                if (!result.TryGetValue(otype, out var values))
+                    result[otype] = [];
+
+                result[otype].Add(item.Image.Url);
+            }
+        }
         return result;
     }
 

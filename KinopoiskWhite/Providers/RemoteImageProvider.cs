@@ -13,9 +13,8 @@ using MediaBrowser.Model.Providers;
 namespace KinopoiskWhite.Providers;
 
 using Api;
-using Api.Models;
 using Extensions;
-using Cache = Dictionary<ImageType, string[]>;
+using Cache = Dictionary<ImageType, List<string>>;
 
 public class RemoteImageProvider
 (
@@ -32,8 +31,12 @@ public class RemoteImageProvider
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
     [
         ImageType.Primary,
-        // ImageType.Backdrop,
-        // ImageType.Logo,
+        ImageType.Box,
+        ImageType.BoxRear,
+        ImageType.Backdrop,
+        ImageType.Screenshot,
+        ImageType.Art,
+        ImageType.Banner,
     ];
 
     public async Task<IEnumerable<RemoteImageInfo>>

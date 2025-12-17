@@ -35,25 +35,29 @@ public record Image
 
     protected int MaxDimension => 600;
     private string BaseUrl => $"https:{AvatarsUrl}";
-    public string Url
+    public string Small => $"{BaseUrl}/300x";
+    public string Medium => $"{BaseUrl}/576x";
+    public string Large => $"{BaseUrl}/3840x";
+    public string Url => Medium;
+    public string Calculated
     {
         get
         {
-            var width = OrigSize?.Width ?? MaxDimension;
-            var height = OrigSize?.Height ?? MaxDimension;
+            int width = OrigSize?.Width ?? MaxDimension;
+            int height = OrigSize?.Height ?? MaxDimension;
 
-            var multiplier = MaxDimension / System.Math.Max(width, height);
+            float multiplier = MaxDimension / (float)System.Math.Max(width, height);
 
             if (multiplier < 1) {
                 if (width > height)
                 {
                     width = MaxDimension;
-                    height *= multiplier;
+                    height = (int)(System.Convert.ToSingle(height) * multiplier);
                 }
                 else
                 {
                     height = MaxDimension;
-                    width *= multiplier;
+                    width = (int)(System.Convert.ToSingle(width) * multiplier);
                 }
             }
             return $"{BaseUrl}/{width}x{height}";
