@@ -53,8 +53,8 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         serviceCollection.AddSingleton<IApiService, ApiService>();
+        serviceCollection.AddSingleton<IImageProvider, RemoteImageProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
-        serviceCollection.AddSingleton<IImageProvider, RemoteImageProvider<Movie>>();
     }
 }
 
@@ -76,6 +76,6 @@ public abstract class BaseSingleton: Base {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
 
-        _logger?.LogInformation("INIT");
+        _logger?.LogDebug("INIT");
     }
 }

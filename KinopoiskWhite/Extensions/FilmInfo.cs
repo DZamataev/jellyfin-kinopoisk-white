@@ -9,37 +9,43 @@ namespace KinopoiskWhite.Extensions;
 using Api.Models;
 using Common;
 
+using Cache = Dictionary<ImageType, string[]>;
+
 public static class FilmInfoExtensions
 {
-    public static IEnumerable<RemoteImageInfo> GetImages(this FilmInfo film)
+    public static Cache GetCache(this FilmInfo metadata)
     {
-        var res = Enumerable.Empty<RemoteImageInfo>();
+        Cache result = [];
+        if (metadata.Gallery == null) return result;
 
-        static RemoteImageInfo fill(ImageType type, string image)
+        result[ImageType.Primary] = [ metadata.Gallery?.Primary ];
+        result[ImageType.Backdrop] = [ metadata.Gallery?.Backdrop ];
+        result[ImageType.Logo] = [ metadata.Gallery?.Logo ];
+        return result;
+    }
+
+    public static IEnumerable<RemoteImageInfo> GetImages(this Cache cache)
+    {
+        foreach (var (type, urls) in cache)
         {
-            if (image == null) return null;
-
-            return new RemoteImageInfo
+            foreach (var url in urls)
             {
-                Type = type,
-                Url = image,
-                Language = Constants.ProviderMetadataLanguage,
-                ProviderName = Constants.ProviderName,
-            };
+                if (url == null) continue;
+
+                yield return new RemoteImageInfo
+                {
+                    Type = type,
+                    Url = url,
+                    Language = Constants.ProviderMetadataLanguage,
+                    ProviderName = Constants.ProviderName,
+                };
+            }
         }
+    }
 
-        (ImageType, string)[] images = [
-            (ImageType.Primary, film.Gallery?.Primary),
-            // (ImageType.Backdrop, film.Gallery?.Backdrop),
-            // (ImageType.Logo, film.Gallery?.Logo),
-        ];
-
-        foreach (var (type, url) in images)
-        {
-            var result = fill(type, url);
-
-            if (result != null)
-                yield return result;
-        }
+    public static IEnumerable<RemoteImageInfo> GetImages(this FilmInfo metadata)
+    {
+        var cache = metadata.GetCache();
+        return cache.GetImages();
     }
 }
