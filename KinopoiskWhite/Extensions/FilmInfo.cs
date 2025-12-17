@@ -1,14 +1,13 @@
 using System.Linq;
 using System.Collections.Generic;
 
-using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using ImageType = MediaBrowser.Model.Entities.ImageType;
 
 namespace KinopoiskWhite.Extensions;
 
 using Api.Models;
 using Common;
-
 using Cache = Dictionary<ImageType, string[]>;
 
 public static class FilmInfoExtensions

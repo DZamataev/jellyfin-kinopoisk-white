@@ -46,7 +46,7 @@ public class RemoteImageProvider
         else
         {
             _logger.LogDebug("Loading images by {kid}", kid);
-            var meta = await _api.Fetch(kid, cancellationToken).ConfigureAwait(false);
+            var meta = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
             cache = meta.GetCache();
             _cache[kid] = cache;
         }

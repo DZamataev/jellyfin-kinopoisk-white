@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Controller.Entities.Movies;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using MediaBrowser.Controller.Providers;
 
 using KinopoiskWhite.Api;
@@ -7,19 +8,29 @@ using KinopoiskWhite.Extensions;
 namespace App; 
 
 class Program {
-    private static ApiService _api;
+    private static IApiService _api;
     private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
     {
-        // var services = new ServiceCollection();
-        // services.AddHttpClient();
-        // var sp = services.BuildServiceProvider();
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddHttpClient();
+        serviceCollection.AddLogging(builder => {
+            builder.AddConsole();
+            builder.AddFilter("KinopoiskWhite.Api.GraphQL", LogLevel.Trace);
+        });
+        serviceCollection.AddSingleton<IGraphQL, GraphQL>();
+        serviceCollection.AddSingleton<IApiService, ApiService>();
+        var sp = serviceCollection.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true  // Выбросит исключение при ошибке регистрации
+        });
+        _api = sp.GetRequiredService<IApiService>();
 
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
         // );
-        _api = new ApiService(null);
+        // _api = new ApiService(null);
     }
 
     static async Task Main(string[] args) {
@@ -31,21 +42,16 @@ class Program {
 
         var info = new MovieInfo
         {
+            Path = "Fight Club 1999.mkv"
             // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
             // Path = "F1. The Movie (2025).mkv"
             // Path = "After.Life.1998.HDRip_[1.46].avi"
-            Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
+            // Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
         };
         var meta = await _api.GetKinopoiskId(info.Path, _token);
-        meta = await _api.Fetch(meta.Id, _token);
-        Console.WriteLine($"{meta.Title}");
-        meta = await _api.FetchByContentId(meta.ContentId, _token);
-        Console.WriteLine($"{meta.Title}");
-        var result = new MetadataResult<Movie>()
-        {
-            Item = new Movie()
-        };
-        result.FillFrom(meta);
+        // meta = await _api.Fetch(meta.Id, _token);
+        meta = await _api.GetImages(meta.Id, _token);
+        Console.WriteLine($"{meta.Id}");
         Console.WriteLine("Finished");
     }
 }

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace KinopoiskWhite.Api.Models;
 
 public record FilmInfo
@@ -10,6 +8,7 @@ public record FilmInfo
     public FilmTitle Title { get; init; }
     public FilmRating Rating { get; init; }
     public FilmGallery Gallery { get; init; }
+    public FilmImages Images { get; init; }
     public FilmActors Actors { get; init; }
     public FilmCrewMembers Directors { get; init; }
     public FilmCrewMembers Writers { get; init; }
@@ -24,7 +23,7 @@ public record FilmInfo
     public string Tagline { get; init; } = "";
     public string ShortDescription { get; init; } = "";
     public string Synopsis { get; init; } = "";
-    public List<Genre> Genres { get; init; } = [];
+    public Genre[] Genres { get; init; } = [];
     public FilmPremiere WorldPremiere { get; init; }
     public FilmRestriction Restriction { get; init; }
 
@@ -74,59 +73,10 @@ public record FilmInfo
             public int? NegativeCount { get; init; }
         }
     }
-
-    public record FilmGallery
-    {
-        public FilmImages Covers { get; init; }
-        public FilmImages Logos { get; init; }
-        public FilmImages Posters { get; init; }
-
-        public string Primary => (Posters?.Vertical ?? Posters?.MarketingVertical)?.Url;
-        public string Backdrop => (Covers?.Horizontal ?? Covers.Square)?.Url;
-        public string Logo => Logos?.Horizontal?.Url;
-
-        public record FilmImages(
-            Image Square,
-            HorizontalImage Horizontal,
-            VerticalImage Vertical,
-            VerticalImage MarketingVertical,
-            VerticalImage HdVertical,
-            VerticalImage KpVertical
-        );
-
-        public record Image
-        {
-            public string AvatarsUrl { get; init; } = "";
-            public ImageSize OrigSize { get; init; }
-
-            public record ImageSize(int? Width, int? Height);
-
-            private string BaseUrl => $"https:{AvatarsUrl}";
-            protected virtual string DefaultSize => "100x100";
-            public string Url
-            {
-                get
-                {
-                    var (width, height) = (OrigSize?.Width, OrigSize?.Height);
-                    return (width != null && height != null)
-                        ? $"{BaseUrl}/{width}x{height}"
-                        : $"{BaseUrl}/{DefaultSize}";
-                }
-            }
-        }
-        public record VerticalImage: Image
-        {
-            protected override string DefaultSize => "600x900";
-        }
-        public record HorizontalImage: Image
-        {
-            protected override string DefaultSize => "900x600";
-        }
-    }
-
+    
     public record FilmCrewMembers
     {
-        public List<FilmCrewMember> Items { get; init; } = [];
+        public FilmCrewMember[] Items { get; init; } = [];
 
         public record FilmCrewMember
         {

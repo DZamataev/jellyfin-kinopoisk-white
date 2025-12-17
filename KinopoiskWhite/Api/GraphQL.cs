@@ -14,7 +14,7 @@ public interface IGraphQL
     Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken);
     Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
     Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
-    Task<FilmInfo> MovieImagesItems(int id, string type, CancellationToken cancellationToken);
+    Task<FilmInfo> MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken);
 }
 
 public class GraphQL : BaseSingleton, IGraphQL
@@ -56,16 +56,19 @@ public class GraphQL : BaseSingleton, IGraphQL
 
     private async Task<JsonDocument> Call(string operationName, object variables, CancellationToken cancellationToken)
     {
+        var url = $"/graphql?operationName={operationName}";
         var query = GetEmbeddedQuery(operationName);
         var request = new { operationName, variables, query };
         var json = JsonSerializer.Serialize(request);
 
         var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        _logger.LogTrace("GraphQL Call {url} {json}", url, json);
+
         var response = await _queue.Enqueue(async () =>
         {
             await Task.Delay(10); // minimal threshold
 
-            return await _client.PostAsync("/graphql", data, cancellationToken);
+            return await _client.PostAsync(url, data, cancellationToken);
         }).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
@@ -125,24 +128,9 @@ public class GraphQL : BaseSingleton, IGraphQL
         new { contentUuid, seasonNumber, episodeNumber, isAuthorized = false },
         "data.movieByContentUuid", cancellationToken);
 
-    public async Task<FilmInfo> MovieImagesItems(int id, string type, CancellationToken cancellationToken)
-    {
-        // COVER, SHOOTING, STILL, POSTER, FAN_ART, PROMO, CONCEPT, WALLPAPER, SCREENSHOT
-
-        var request = new
-        {
-            id,
-            type,
-            offset = 0,
-            limit = 10
-        };
-        using var doc = await Call("MovieImagesItems", request, cancellationToken)
-            .ConfigureAwait(false);
-
-        var root = doc.RootElement
-            .GetProperty("data")
-            .GetProperty("movie");
-
-        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
-    }
+    public async Task<FilmInfo>
+    MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
+     => await Call("MovieImagesItems", new { id, type = $"{type}", offset = 0, limit = 10 },
+                   "data.movie", cancellationToken);
+        
 }

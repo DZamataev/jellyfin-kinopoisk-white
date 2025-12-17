@@ -1,18 +1,18 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace KinopoiskWhite.Api;
-using Providers;
 using Models;
 using Extensions;
-using Microsoft.Extensions.Logging;
 
 public interface IApiService
 {
     Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
     Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
     Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
+    Task<FilmInfo> GetImages(int kid, CancellationToken cancellationToken);
 }
 
 public class ApiService : BaseSingleton, IApiService
@@ -75,13 +75,30 @@ public class ApiService : BaseSingleton, IApiService
             $"Get Kinopoisk metadata failed CID {contentId}");
     }
 
-    // public async Task
-    // GetImages(string kid, CancellationToken cancellationToken)
-    // {
-    //     var film = await _graphql
-    //         .FilmPage(contentId, cancellationToken);
+    public async Task<FilmInfo>
+    GetImages(int kid, CancellationToken cancellationToken)
+    {
+        FilmInfo result = null;
 
-    //     return film ?? throw new System.Exception(
-    //         $"Get Kinopoisk metadata failed CID {contentId}");
-    // }
+        foreach (var type in System.Enum.GetValues<FilmImageType>())
+        {
+            var chunk = await _graphql.MovieImagesItems(kid, type, cancellationToken);
+
+            if (result == null) result = chunk;
+            else
+            {
+                FilmImages.ListImage[] images = [.. result?.Images?.Items ?? [],
+                                                 .. chunk?.Images?.Items ?? []];
+
+                result = result with
+                {
+                    Images = new()
+                    {
+                        Items = images
+                    }
+                };
+            }
+        }
+        return result;
+    }
 }
