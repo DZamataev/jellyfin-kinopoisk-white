@@ -1,29 +1,41 @@
-﻿using MediaBrowser.Controller.Providers;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using MediaBrowser.Controller.Providers;
 
-using Plugin.Api;
-using Plugin.Common;
+using KinopoiskWhite.Api;
+using KinopoiskWhite.Providers;
+using KinopoiskWhite.Extensions;
+using MediaBrowser.Controller.Entities.Movies;
 
 namespace App; 
 
 class Program {
-    private static KinopoiskApi _api;
+    private static IApiService _api;
+    private static IRemoteImageProvider _provider;
+    private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
     {
-        var services = new ServiceCollection();
-        services.AddHttpClient();
-        var sp = services.BuildServiceProvider();
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddHttpClient();
+        serviceCollection.AddLogging(builder => {
+            builder.AddConsole();
+            builder.AddFilter("KinopoiskWhite.Api.GraphQL", LogLevel.Trace);
+        });
+        serviceCollection.AddSingleton<IGraphQL, GraphQL>();
+        serviceCollection.AddSingleton<IApiService, ApiService>();
+        serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider>();
+        var sp = serviceCollection.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true  // Выбросит исключение при ошибке регистрации
+        });
+        _api = sp.GetRequiredService<IApiService>();
+        _provider = sp.GetRequiredService<IRemoteImageProvider>();
 
-        _api = new KinopoiskApi(
-            new GraphQL(
-                sp.GetRequiredService<ILogger<GraphQL>>(),
-                sp.GetRequiredService<IHttpClientFactory>()
-            ),
-            sp.GetRequiredService<ILogger<KinopoiskApi>>(),
-            sp.GetRequiredService<IHttpClientFactory>()
-        );
+        // _api = new KinopoiskApi(
+        //     sp.GetRequiredService<IHttpClientFactory>()
+        // );
+        // _api = new ApiService(null);
     }
 
     static async Task Main(string[] args) {
@@ -35,9 +47,22 @@ class Program {
 
         var info = new MovieInfo
         {
-            Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
+            Path = "Fight Club 1999.mkv"
+            // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
+            // Path = "F1. The Movie (2025).mkv"
+            // Path = "After.Life.1998.HDRip_[1.46].avi"
+            // Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
         };
-        var kid = await _api.GetKinopoiskId(info, CancellationToken.None);
+        // var meta = await _api.GetKinopoiskId(info.Path, _token);
+        // meta = await _api.Fetch(meta.Id, _token);
+        // meta = await _api.GetImages(meta.Id, _token);
+        // Console.WriteLine($"{meta.Id}");
+        var item = new Movie();
+        item.SetDefaultId(361);
+        var images = await _provider.GetImages(item, _token);
+        foreach (var image in images)
+            Console.WriteLine($"{image}");
+
         Console.WriteLine("Finished");
     }
 }

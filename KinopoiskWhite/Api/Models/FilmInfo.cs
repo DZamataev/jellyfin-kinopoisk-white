@@ -1,14 +1,14 @@
-using System.Collections.Generic;
-
-namespace Plugin.Api;
+namespace KinopoiskWhite.Api.Models;
 
 public record FilmInfo
 {
+    public bool QueriedById { get; init; } = false;
     public int Id { get; init; }
     public string ContentId { get; init; } = "";
     public FilmTitle Title { get; init; }
     public FilmRating Rating { get; init; }
     public FilmGallery Gallery { get; init; }
+    public FilmImages Images { get; init; }
     public FilmActors Actors { get; init; }
     public FilmCrewMembers Directors { get; init; }
     public FilmCrewMembers Writers { get; init; }
@@ -23,7 +23,7 @@ public record FilmInfo
     public string Tagline { get; init; } = "";
     public string ShortDescription { get; init; } = "";
     public string Synopsis { get; init; } = "";
-    public List<Genre> Genres { get; init; } = [];
+    public Genre[] Genres { get; init; } = [];
     public FilmPremiere WorldPremiere { get; init; }
     public FilmRestriction Restriction { get; init; }
 
@@ -73,30 +73,10 @@ public record FilmInfo
             public int? NegativeCount { get; init; }
         }
     }
-
-    public record FilmGallery
-    {
-        public FilmPosters Posters { get; init; }
-
-        public record FilmCovers(Image Square, Image Horizontal);
-        public record FilmPosters(Image MarketingVertical, Image HdVertical, Image KpVertical);
-
-        public record Image
-        {
-            public string AvatarsUrl { get; init; } = "";
-
-            public string Url => $"https://{AvatarsUrl}";
-            public string Tiny => $"{Url}/100x100";
-            public string Small => $"{Url}/100x100";
-            public string Medium => $"{Url}/400x400";
-            public string Large => $"{Url}/800x800";
-            public string ExtraLarge => $"{Url}/1200x1200";
-        }
-    }
-
+    
     public record FilmCrewMembers
     {
-        public List<FilmCrewMember> Items { get; init; } = [];
+        public FilmCrewMember[] Items { get; init; } = [];
 
         public record FilmCrewMember
         {

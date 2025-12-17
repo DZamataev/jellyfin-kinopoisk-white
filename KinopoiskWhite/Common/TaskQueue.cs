@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using System.Threading.Channels;
 
-namespace Plugin.Common;
+namespace KinopoiskWhite.Common;
 
 public class TaskQueue
 {

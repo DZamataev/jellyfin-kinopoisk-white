@@ -1,6 +1,6 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # 
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugin", "Plugin\Plugin.csproj", "{A8B5EAA5-D292-46F5-AFB2-45978366B15B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KinopoiskWhite", "KinopoiskWhite\Plugin.csproj", "{A8B5EAA5-D292-46F5-AFB2-45978366B15B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App", "App\App.csproj", "{2FEF2D06-6C9B-412B-BC27-247187034839}"
 EndProject
