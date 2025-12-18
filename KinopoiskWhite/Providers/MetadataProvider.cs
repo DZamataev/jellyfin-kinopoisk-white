@@ -59,7 +59,7 @@ where TLookupInfoType : ItemLookupInfo, new()
 
         result.FillFrom(await _api.GetKinopoiskId(info.Path, cancellationToken));
 
-        _logger.LogInformation("Found item {0} as {1}", info.Name, result.Item.Name);
+        _logger.LogInformation("Found item {name} as {newName}", info.Name, result.Item.Name);
 
         return result;
     }

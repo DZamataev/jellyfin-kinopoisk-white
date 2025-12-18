@@ -44,12 +44,18 @@ public static class MetadataResultExtensions
     }
 
     static void AddCrewMembers<T>(this MetadataResult<T> target, PersonKind type,
-                                  FilmInfo.FilmCrewMembers members) where T : BaseItem
+                                  FilmCrewMembers members) where T : BaseItem
     {
         foreach (var member in members?.Items ?? [])
         {
             if (member?.Person?.Name == null) return;
-            target.AddPerson(new PersonInfo { Name = member.Person.Name, Type = type });
+            var person = new PersonInfo {
+                Type = type,
+                Name = member.Person.Name,
+            };
+            person.SetDefaultId(member.Person.Id);
+            target.AddPerson(person);
+
         }
     }
 }

@@ -74,22 +74,6 @@ public record FilmInfo
         }
     }
     
-    public record FilmCrewMembers
-    {
-        public FilmCrewMember[] Items { get; init; } = [];
-
-        public record FilmCrewMember
-        {
-            public FilmPerson Person { get; init; }
-            public record FilmPerson(int Id, string Name = "", string OriginalName = "");
-        }
-    }
-
-    public record FilmActors : FilmCrewMembers
-    {
-        public int? Total { get; init; } = 0;
-    }
-
     public record FilmBoxOffice
     {
         public MoneyAmount Budget { get; init; }

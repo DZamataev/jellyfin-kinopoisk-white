@@ -68,13 +68,16 @@ class Program {
         // foreach (var image in images)
         //     Console.WriteLine($"{image}");
 
-        var item = new MovieInfo();
-        item.SetDefaultId(361);
-        item.Name = "fight club";
-        item.Year = 1999;
-        var results = await _movieProvider.GetSearchResults(item, _token);
-        foreach (var result in results)
-            Console.WriteLine($"{result}");
+        // var item = new MovieInfo();
+        // item.SetDefaultId(361);
+        // item.Name = "fight club";
+        // item.Year = 1999;
+        // var results = await _movieProvider.GetSearchResults(item, _token);
+        // foreach (var result in results)
+        //     Console.WriteLine($"{result}");
+
+        var person = await _api.GetPerson(25774, _token);
+        Console.WriteLine($"{person}");
 
         Console.WriteLine("Finished");
     }

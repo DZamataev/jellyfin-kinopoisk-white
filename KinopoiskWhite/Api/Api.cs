@@ -16,6 +16,7 @@ public interface IApiService
     Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
     Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
     Task<FilmInfo> GetImages(int kid, CancellationToken cancellationToken);
+    Task<FilmPerson> GetPerson(int id, CancellationToken cancellationToken);
 }
 
 public class ApiService : BaseSingleton, IApiService
@@ -117,4 +118,8 @@ public class ApiService : BaseSingleton, IApiService
         _logger.LogDebug(resultCounter);
         return result;
     }
+
+    public async Task<FilmPerson>
+    GetPerson(int id, CancellationToken cancellationToken)
+    => await _graphql.GetPerson(id, cancellationToken);
 }

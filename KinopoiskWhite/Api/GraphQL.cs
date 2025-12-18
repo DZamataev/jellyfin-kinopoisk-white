@@ -18,11 +18,13 @@ public interface IGraphQL
     Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
     Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
     Task<FilmInfo> MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken);
+    Task<FilmPerson> GetPerson(int id, CancellationToken cancellationToken);
 }
 
 public class GraphQL : BaseSingleton, IGraphQL
 {
     private readonly HttpClient _client;
+    private readonly HttpClient _apiClient;
     private readonly TaskQueue _queue;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -36,8 +38,15 @@ public class GraphQL : BaseSingleton, IGraphQL
         else
             _client = httpClientFactory.CreateClient();
 
-        _client.BaseAddress = new System.Uri("https://graphql.kinopoisk.ru/");
         _client.DefaultRequestHeaders.Add("service-id", "25");
+
+        _apiClient = new HttpClient(new HttpClientHandler()
+        {
+            AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                     System.Net.DecompressionMethods.Deflate
+        });
+        _apiClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+        _apiClient.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -57,9 +66,33 @@ public class GraphQL : BaseSingleton, IGraphQL
         return reader.ReadToEnd();
     }
 
-    private async Task<JsonDocument> Call(string operationName, object variables, CancellationToken cancellationToken)
+    private async Task<JsonDocument> CallApi(string method, CancellationToken cancellationToken)
     {
-        var url = $"/graphql?operationName={operationName}";
+        var url = $"https://www.kinopoisk.ru/api/{method}";
+        _logger.LogTrace("{url}", url);
+
+        var response = await _queue.Enqueue(async () =>
+        {
+            await Task.Delay(10); // minimal threshold
+
+            return await _apiClient.GetAsync(url, cancellationToken);
+        }).ConfigureAwait(false);
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        var doc = JsonDocument.Parse(result);
+
+        if (doc.RootElement.ValueKind == JsonValueKind.Null)
+            throw new System.Exception("Document is null");
+
+        return doc;
+    }
+
+    private async Task<JsonElement> Call(string operationName, object variables, CancellationToken cancellationToken)
+    {
+        var url = "https://graphql.kinopoisk.ru/graphql";
         var query = GetEmbeddedQuery(operationName);
         var request = new { operationName, variables, query };
         var json = JsonSerializer.Serialize(request);
@@ -78,42 +111,37 @@ public class GraphQL : BaseSingleton, IGraphQL
 
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        var doc = JsonDocument.Parse(result);
+        using var doc = JsonDocument.Parse(result);
 
         if (doc.RootElement.ValueKind == JsonValueKind.Null)
             throw new System.Exception("Document is null");
 
-        return doc;
+        return doc.RootElement.Clone();
+    }
+
+    private static JsonElement Walk(JsonElement root, string path)
+    {
+        foreach (var chunk in path.Split('.'))
+            root = root.GetProperty(chunk);
+
+        return root;
     }
 
     private async Task<JsonElement> Call(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
-        using var doc = await Call(operationName, variables, cancellationToken)
+        var root = await Call(operationName, variables, cancellationToken)
             .ConfigureAwait(false);
 
-        var root = doc.RootElement;
-        foreach (var chunk in path.Split('.'))
-        {
-            root = root.GetProperty(chunk);
-        }
-        return root.Clone();
+        return Walk(root, path);
     }
 
     private async Task<FilmInfo> CallAndDeserialize(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
-        using var doc = await Call(operationName, variables, cancellationToken)
-            .ConfigureAwait(false);
-
-        var root = doc.RootElement;
-        foreach (var chunk in path.Split('.'))
-        {
-            root = root.GetProperty(chunk);
-        }
-        // var root = await Call(operationName, variables, path, cancellationToken);
+        var root = await Call(operationName, variables, path, cancellationToken);
         return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
     }
 
@@ -164,5 +192,11 @@ public class GraphQL : BaseSingleton, IGraphQL
     MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
      => await CallAndDeserialize("MovieImagesItems", new { id, type, offset = 0, limit = 50 },
                    "data.movie", cancellationToken);
-        
+
+    public async Task<FilmPerson>
+    GetPerson(int id, CancellationToken cancellationToken)
+    {
+        var root = await CallApi($"person/{id}", cancellationToken);
+        return JsonSerializer.Deserialize<FilmPerson>(root, _jsonOptions);
+    }
 }
