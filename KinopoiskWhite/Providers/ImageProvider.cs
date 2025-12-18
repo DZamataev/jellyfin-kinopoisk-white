@@ -14,7 +14,7 @@ namespace KinopoiskWhite.Providers;
 
 using Api;
 using Extensions;
-using Cache = Dictionary<ImageType, List<string>>;
+using KinopoiskWhite.Api.Models;
 
 public class RemoteImageProvider
 (
@@ -26,7 +26,7 @@ public class RemoteImageProvider
     IRemoteImageProvider
 {
     public bool Supports(BaseItem item) => item is Movie;
-    private readonly Dictionary<int, Cache> _cache = [];
+    private readonly Dictionary<int, FilmInfo> _cache = [];
 
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
     [
@@ -39,26 +39,44 @@ public class RemoteImageProvider
         ImageType.Banner,
     ];
 
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(BaseItem item, CancellationToken cancellationToken)
+    public async Task<FilmInfo>
+    GetMetadata(BaseItem item, CancellationToken cancellationToken)
     {
-        if (!item.TryGetDefaultId(out int kid)) return [];
-
-        if (_cache.TryGetValue(kid, out Cache cache))
-            _logger.LogDebug("Getting cached images by {kid}", kid);
-        else
+        if (!item.TryGetDefaultId(out int kid))
         {
-            _logger.LogDebug("Loading images by {kid}", kid);
-            var meta = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
-            cache = meta.GetCache();
-            _cache[kid] = cache;
+            _logger.LogDebug("Looking for kid by path {path}", item.Path);
+
+            var initial = await _api.GetKinopoiskId(item.Path, cancellationToken)
+                .ConfigureAwait(false);
+
+            kid = initial.Id;
+
+            if (_cache.TryGetValue(kid, out FilmInfo _))
+                throw new System.Exception($"Cache conflict {kid}");
+
+            _cache[kid] = initial;
         }
 
-        var result = cache.GetImages();
+        if (_cache.TryGetValue(kid, out FilmInfo cached))
+            _logger.LogDebug("Getting cached by {kid}", kid);
 
-        foreach (var img in result)
-            _logger.LogDebug("{type} {img}", img.Type, img.Url);
-            
-        return result;
+        else
+        {
+            if (item.TryGetContentId(out string cid))
+                _cache[kid] = await _api.FetchByContentId(cid, cancellationToken)
+                    .ConfigureAwait(false);
+
+            cached = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
+
+            if (_cache.TryGetValue(kid, out FilmInfo _))
+                cached = _cache[kid] with { Images = cached.Images };
+
+            _cache[kid] = cached;
+        }
+        return cached;
     }
+
+    public async Task<IEnumerable<RemoteImageInfo>>
+    GetImages(BaseItem item, CancellationToken cancellationToken)
+    => (await GetMetadata(item, cancellationToken)).GetImages();
 }

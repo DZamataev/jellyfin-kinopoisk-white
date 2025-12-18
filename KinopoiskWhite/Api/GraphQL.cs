@@ -62,7 +62,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         var json = JsonSerializer.Serialize(request);
 
         var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        _logger.LogTrace("GraphQL Call {url} {json}", url, json);
+        _logger.LogTrace("{url} {json}", url, json);
 
         var response = await _queue.Enqueue(async () =>
         {
@@ -130,7 +130,7 @@ public class GraphQL : BaseSingleton, IGraphQL
 
     public async Task<FilmInfo>
     MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
-     => await Call("MovieImagesItems", new { id, type = $"{type}", offset = 0, limit = 10 },
+     => await Call("MovieImagesItems", new { id, type, offset = 0, limit = 50 },
                    "data.movie", cancellationToken);
         
 }

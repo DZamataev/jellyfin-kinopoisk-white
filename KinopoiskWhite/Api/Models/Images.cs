@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace KinopoiskWhite.Api.Models;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum FilmImageType
 {
     POSTER,
@@ -7,10 +10,10 @@ public enum FilmImageType
     STILL,
     WALLPAPER,
     SCREENSHOT,
-    SHOOTING,
     FAN_ART,
-    PROMO,
-    CONCEPT
+    // PROMO,
+    // CONCEPT
+    // SHOOTING,
 }
 
 public record FilmImages
@@ -21,7 +24,7 @@ public record FilmImages
     public record ListImage
     {
         public int? Id { get; init; }
-        public string Type { get; init; } // public FilmImageType Type { get; init; }
+        public FilmImageType Type { get; init; }
         public Image Image { get; init; }
     }
 }
@@ -39,30 +42,6 @@ public record Image
     public string Medium => $"{BaseUrl}/576x";
     public string Large => $"{BaseUrl}/3840x";
     public string Url => Medium;
-    public string Calculated
-    {
-        get
-        {
-            int width = OrigSize?.Width ?? MaxDimension;
-            int height = OrigSize?.Height ?? MaxDimension;
-
-            float multiplier = MaxDimension / (float)System.Math.Max(width, height);
-
-            if (multiplier < 1) {
-                if (width > height)
-                {
-                    width = MaxDimension;
-                    height = (int)(System.Convert.ToSingle(height) * multiplier);
-                }
-                else
-                {
-                    height = MaxDimension;
-                    width = (int)(System.Convert.ToSingle(width) * multiplier);
-                }
-            }
-            return $"{BaseUrl}/{width}x{height}";
-        }
-    }
 }
 
 public record FilmGallery
@@ -70,10 +49,6 @@ public record FilmGallery
     public FilmGalleryImages Covers { get; init; }
     public FilmGalleryImages Logos { get; init; }
     public FilmGalleryImages Posters { get; init; }
-
-    public string Primary => (Posters?.Vertical ?? Posters?.MarketingVertical)?.Url;
-    public string Backdrop => (Covers?.Horizontal ?? Covers.Square)?.Url;
-    public string Logo => Logos?.Horizontal?.Url;
 
     public record FilmGalleryImages(
         Image Square,
