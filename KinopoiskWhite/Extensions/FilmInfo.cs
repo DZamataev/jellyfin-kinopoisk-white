@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Collections.Generic;
 
 using MediaBrowser.Model.Providers;
@@ -14,45 +13,36 @@ public static class FilmInfoExtensions
 {
     private static Dictionary<FilmImageType, ImageType> Mapper = new() {
         {FilmImageType.POSTER, ImageType.Primary},
-        {FilmImageType.COVER, ImageType.Box},
-        {FilmImageType.STILL, ImageType.BoxRear},
+        {FilmImageType.COVER, ImageType.Primary},
+        {FilmImageType.FAN_ART, ImageType.Primary},
         {FilmImageType.WALLPAPER, ImageType.Backdrop},
-        {FilmImageType.SCREENSHOT, ImageType.Screenshot},
-        {FilmImageType.SHOOTING, ImageType.Backdrop},
-        {FilmImageType.FAN_ART, ImageType.Art},
-        {FilmImageType.PROMO, ImageType.Banner},
-        {FilmImageType.CONCEPT, ImageType.Box},
+        {FilmImageType.STILL, ImageType.Backdrop},
+        {FilmImageType.SCREENSHOT, ImageType.Backdrop},
     };
-
-    private static TValue
-    GetOrAddDefault<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
-    {
-        if (dict.TryGetValue(key, out var value))
-            return value;
-        
-        dict[key] = defaultValue;
-        return defaultValue;
-    }
 
     public static Cache GetCache(this FilmInfo metadata)
     {
         Cache result = [];
+
         var gallery = metadata?.Gallery;
         if (gallery != null)
         {
-            result[ImageType.Primary] = [ gallery?.Primary ];
-            result[ImageType.Backdrop] = [ gallery?.Backdrop ];
-            result[ImageType.Logo] = [ gallery?.Logo ];
+            result[ImageType.Primary] = [
+                (gallery.Posters?.Vertical ?? gallery.Posters?.MarketingVertical)?.Url
+            ];
+            result[ImageType.Logo] = [
+                gallery?.Logos?.Horizontal?.Url
+            ];
         }
+
         var items = metadata?.Images?.Items;
         if (items != null)
         {
             foreach (var item in items)
             {
-                if (!FilmImageType.TryParse(item.Type, false, out FilmImageType ftype)) continue;
-                if (!Mapper.TryGetValue(ftype, out ImageType otype)) continue;
+                if (!Mapper.TryGetValue(item.Type, out ImageType otype)) continue;
 
-                if (!result.TryGetValue(otype, out var values))
+                if (!result.TryGetValue(otype, out var _))
                     result[otype] = [];
 
                 result[otype].Add(item.Image.Url);
@@ -84,5 +74,33 @@ public static class FilmInfoExtensions
     {
         var cache = metadata.GetCache();
         return cache.GetImages();
+    }
+
+    public static RemoteSearchResult GetSearchResult(this FilmInfo metadata)
+    {
+        string title;
+        if (!string.IsNullOrWhiteSpace(metadata.Title.Russian))
+        {
+            title = metadata.Title.Russian;
+            if (!string.IsNullOrWhiteSpace(metadata.Title.Original))
+                title += $" ({metadata.Title.Original})";
+        }
+        else
+            title = metadata.Title.Original;
+
+        RemoteSearchResult result = new()
+        {
+            Name = title,
+            ProductionYear = metadata.ProductionYear,
+            ImageUrl = (
+                metadata.Gallery?.Posters?.HdVertical ??
+                metadata.Gallery?.Posters?.KpVertical ??
+                metadata.Gallery?.Posters?.Vertical ??
+                metadata.Gallery?.Posters?.MarketingVertical
+            )?.Medium,
+        };
+        result.SetDefaultId(metadata.Id);
+        result.SetContentId(metadata.ContentId);
+        return result;
     }
 }

@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace KinopoiskWhite.Api;
+
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Common;
 using Models;
 
 public interface IGraphQL
 {
-    Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken);
+    IAsyncEnumerable<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken);
     Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
     Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
     Task<FilmInfo> MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken);
@@ -62,7 +65,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         var json = JsonSerializer.Serialize(request);
 
         var data = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        _logger.LogTrace("GraphQL Call {url} {json}", url, json);
+        _logger.LogTrace("{url} {json}", url, json);
 
         var response = await _queue.Enqueue(async () =>
         {
@@ -83,7 +86,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         return doc;
     }
 
-    private async Task<FilmInfo> Call(
+    private async Task<JsonElement> Call(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
@@ -95,16 +98,45 @@ public class GraphQL : BaseSingleton, IGraphQL
         {
             root = root.GetProperty(chunk);
         }
+        return root.Clone();
+    }
+
+    private async Task<FilmInfo> CallAndDeserialize(
+        string operationName, object variables, string path,
+        CancellationToken cancellationToken)
+    {
+        using var doc = await Call(operationName, variables, cancellationToken)
+            .ConfigureAwait(false);
+
+        var root = doc.RootElement;
+        foreach (var chunk in path.Split('.'))
+        {
+            root = root.GetProperty(chunk);
+        }
+        // var root = await Call(operationName, variables, path, cancellationToken);
         return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
     }
 
-    public async Task<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken)
-    => await Call(
-        "SuggestSearch", new { keyword },
-        "data.suggest.top.topResult.global", cancellationToken);
+    public async IAsyncEnumerable<FilmInfo>
+    SuggestSearch(string keyword, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var root = await Call(
+            "SuggestSearch",
+            new { keyword, limit = 10 },
+            "data.suggest.top",
+            cancellationToken
+        ).ConfigureAwait(false);
+
+        var top = root.GetProperty("topResult").GetProperty("global");
+        yield return JsonSerializer.Deserialize<FilmInfo>(top, _jsonOptions);
+
+        foreach (var movie in root.GetProperty("movies").EnumerateArray())
+            yield return JsonSerializer.Deserialize<FilmInfo>(
+                movie.GetProperty("movie"), _jsonOptions);
+    }
 
     public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
-    => await Call(
+    => await CallAndDeserialize(
         "FilmBaseInfo", new
         {
             filmId,
@@ -123,14 +155,14 @@ public class GraphQL : BaseSingleton, IGraphQL
                                          CancellationToken cancellationToken,
                                          int seasonNumber = 0,
                                          int episodeNumber = 0)
-    => await Call(
+    => await CallAndDeserialize(
         "FilmPage",
         new { contentUuid, seasonNumber, episodeNumber, isAuthorized = false },
         "data.movieByContentUuid", cancellationToken);
 
     public async Task<FilmInfo>
     MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
-     => await Call("MovieImagesItems", new { id, type = $"{type}", offset = 0, limit = 10 },
+     => await CallAndDeserialize("MovieImagesItems", new { id, type, offset = 0, limit = 50 },
                    "data.movie", cancellationToken);
         
 }

@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace KinopoiskWhite.Api;
@@ -9,6 +11,7 @@ using Extensions;
 
 public interface IApiService
 {
+    IAsyncEnumerable<FilmInfo> GetSearchResults(string path, CancellationToken cancellationToken);
     Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
     Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
     Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
@@ -28,39 +31,44 @@ public class ApiService : BaseSingleton, IApiService
         _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
     }
 
-    public async Task<FilmInfo>
-    GetKinopoiskId(string path, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<FilmInfo>
+    GetSearchResults(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Get search results {path}", path);
+
         var keywords = path.ParseFileName();
-        FilmInfo film = null;
 
         foreach (var (title, year) in keywords)
         {
+            if (string.IsNullOrWhiteSpace(title)) continue;
+
             string keyword = (year == null) ? title : $"{title} {year}";
 
-            try
-            {
-                film = await _graphql
-                    .SuggestSearch(keyword, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch
-            {
-                continue;
-            }
-
-            if (film?.Id != null)
-                return film;
+            await foreach (var film in _graphql.SuggestSearch(keyword, cancellationToken))
+                if (film?.Id != null)
+                    yield return film;
         }
-        throw new System.Exception($"Get Kinopoisk Id failed [{path}].\n{keywords}");
+    }
+
+    public async Task<FilmInfo>
+    GetKinopoiskId(string path, CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Get kinopoisk ID {path}", path);
+
+        await foreach (var film in GetSearchResults(path, cancellationToken))
+            return film;
+
+        throw new System.Exception($"Get Kinopoisk Id failed [{path}]");
     }
 
     public async Task<FilmInfo>
     Fetch(int kinopoiskId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Fetch {kid}", kinopoiskId);
+
         var film = await _graphql
             .FilmBaseInfo(kinopoiskId, cancellationToken);
-
+        
         return film ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed KID {kinopoiskId}");
     }
@@ -68,6 +76,8 @@ public class ApiService : BaseSingleton, IApiService
     public async Task<FilmInfo>
     FetchByContentId(string contentId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Fetch by content id {cid}", contentId);
+
         var film = await _graphql
             .FilmPage(contentId, cancellationToken);
 
@@ -76,13 +86,18 @@ public class ApiService : BaseSingleton, IApiService
     }
 
     public async Task<FilmInfo>
-    GetImages(int kid, CancellationToken cancellationToken)
+    GetImages(int kinopoiskId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Get images {kid}", kinopoiskId);
+
         FilmInfo result = null;
+        var resultCounter = "";
 
         foreach (var type in System.Enum.GetValues<FilmImageType>())
         {
-            var chunk = await _graphql.MovieImagesItems(kid, type, cancellationToken);
+            var chunk = await _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+
+            resultCounter += $"{type}:{chunk.Images?.Items?.Length} ";
 
             if (result == null) result = chunk;
             else
@@ -99,6 +114,7 @@ public class ApiService : BaseSingleton, IApiService
                 };
             }
         }
+        _logger.LogDebug(resultCounter);
         return result;
     }
 }

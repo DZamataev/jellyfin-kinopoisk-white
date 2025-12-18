@@ -11,7 +11,8 @@ namespace App;
 
 class Program {
     private static IApiService _api;
-    private static IRemoteImageProvider _provider;
+    private static IRemoteImageProvider _imageProvider;
+    private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
     private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
@@ -25,12 +26,15 @@ class Program {
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         serviceCollection.AddSingleton<IApiService, ApiService>();
         serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider>();
-        var sp = serviceCollection.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true  // Выбросит исключение при ошибке регистрации
-        });
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+
+        var sp = serviceCollection.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true }
+        );
+
         _api = sp.GetRequiredService<IApiService>();
-        _provider = sp.GetRequiredService<IRemoteImageProvider>();
+        _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
+        _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
 
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
@@ -57,11 +61,20 @@ class Program {
         // meta = await _api.Fetch(meta.Id, _token);
         // meta = await _api.GetImages(meta.Id, _token);
         // Console.WriteLine($"{meta.Id}");
-        var item = new Movie();
+
+        // var item = new Movie();
+        // item.SetDefaultId(361);
+        // var images = await _imageProvider.GetImages(item, _token);
+        // foreach (var image in images)
+        //     Console.WriteLine($"{image}");
+
+        var item = new MovieInfo();
         item.SetDefaultId(361);
-        var images = await _provider.GetImages(item, _token);
-        foreach (var image in images)
-            Console.WriteLine($"{image}");
+        item.Name = "fight club";
+        item.Year = 1999;
+        var results = await _movieProvider.GetSearchResults(item, _token);
+        foreach (var result in results)
+            Console.WriteLine($"{result}");
 
         Console.WriteLine("Finished");
     }
