@@ -31,6 +31,8 @@ public class ApiService : BaseSingleton, IApiService
     public async Task<FilmInfo>
     GetKinopoiskId(string path, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Get kinopoisk ID {path}", path);
+
         var keywords = path.ParseFileName();
         FilmInfo film = null;
 
@@ -58,9 +60,11 @@ public class ApiService : BaseSingleton, IApiService
     public async Task<FilmInfo>
     Fetch(int kinopoiskId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Fetch {kid}", kinopoiskId);
+
         var film = await _graphql
             .FilmBaseInfo(kinopoiskId, cancellationToken);
-
+        
         return film ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed KID {kinopoiskId}");
     }
@@ -68,6 +72,8 @@ public class ApiService : BaseSingleton, IApiService
     public async Task<FilmInfo>
     FetchByContentId(string contentId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Fetch by content id {cid}", contentId);
+
         var film = await _graphql
             .FilmPage(contentId, cancellationToken);
 
@@ -76,13 +82,18 @@ public class ApiService : BaseSingleton, IApiService
     }
 
     public async Task<FilmInfo>
-    GetImages(int kid, CancellationToken cancellationToken)
+    GetImages(int kinopoiskId, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Get images {kid}", kinopoiskId);
+
         FilmInfo result = null;
+        var resultCounter = "";
 
         foreach (var type in System.Enum.GetValues<FilmImageType>())
         {
-            var chunk = await _graphql.MovieImagesItems(kid, type, cancellationToken);
+            var chunk = await _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+
+            resultCounter += $"{type}:{chunk.Images?.Items?.Length} ";
 
             if (result == null) result = chunk;
             else
@@ -99,6 +110,7 @@ public class ApiService : BaseSingleton, IApiService
                 };
             }
         }
+        _logger.LogDebug(resultCounter);
         return result;
     }
 }
