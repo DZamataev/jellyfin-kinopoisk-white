@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Collections.Generic;
 
 using MediaBrowser.Model.Providers;
@@ -75,5 +74,33 @@ public static class FilmInfoExtensions
     {
         var cache = metadata.GetCache();
         return cache.GetImages();
+    }
+
+    public static RemoteSearchResult GetSearchResult(this FilmInfo metadata)
+    {
+        string title;
+        if (!string.IsNullOrWhiteSpace(metadata.Title.Russian))
+        {
+            title = metadata.Title.Russian;
+            if (!string.IsNullOrWhiteSpace(metadata.Title.Original))
+                title += $" ({metadata.Title.Original})";
+        }
+        else
+            title = metadata.Title.Original;
+
+        RemoteSearchResult result = new()
+        {
+            Name = title,
+            ProductionYear = metadata.ProductionYear,
+            ImageUrl = (
+                metadata.Gallery?.Posters?.HdVertical ??
+                metadata.Gallery?.Posters?.KpVertical ??
+                metadata.Gallery?.Posters?.Vertical ??
+                metadata.Gallery?.Posters?.MarketingVertical
+            )?.Medium,
+        };
+        result.SetDefaultId(metadata.Id);
+        result.SetContentId(metadata.ContentId);
+        return result;
     }
 }

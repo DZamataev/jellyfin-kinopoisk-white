@@ -1,6 +1,8 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace KinopoiskWhite.Api;
@@ -9,6 +11,7 @@ using Extensions;
 
 public interface IApiService
 {
+    IAsyncEnumerable<FilmInfo> GetSearchResults(string path, CancellationToken cancellationToken);
     Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
     Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
     Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
@@ -28,33 +31,34 @@ public class ApiService : BaseSingleton, IApiService
         _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
     }
 
+    public async IAsyncEnumerable<FilmInfo>
+    GetSearchResults(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Get search results {path}", path);
+
+        var keywords = path.ParseFileName();
+
+        foreach (var (title, year) in keywords)
+        {
+            if (string.IsNullOrWhiteSpace(title)) continue;
+
+            string keyword = (year == null) ? title : $"{title} {year}";
+
+            await foreach (var film in _graphql.SuggestSearch(keyword, cancellationToken))
+                if (film?.Id != null)
+                    yield return film;
+        }
+    }
+
     public async Task<FilmInfo>
     GetKinopoiskId(string path, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get kinopoisk ID {path}", path);
 
-        var keywords = path.ParseFileName();
-        FilmInfo film = null;
+        await foreach (var film in GetSearchResults(path, cancellationToken))
+            return film;
 
-        foreach (var (title, year) in keywords)
-        {
-            string keyword = (year == null) ? title : $"{title} {year}";
-
-            try
-            {
-                film = await _graphql
-                    .SuggestSearch(keyword, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch
-            {
-                continue;
-            }
-
-            if (film?.Id != null)
-                return film;
-        }
-        throw new System.Exception($"Get Kinopoisk Id failed [{path}].\n{keywords}");
+        throw new System.Exception($"Get Kinopoisk Id failed [{path}]");
     }
 
     public async Task<FilmInfo>

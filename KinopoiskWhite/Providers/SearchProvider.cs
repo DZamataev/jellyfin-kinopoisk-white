@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,6 +9,7 @@ using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers;
 using Api;
+using Extensions;
 
 public abstract class SearchProvider<TLookupInfoType>(
     ILogger<SearchProvider<TLookupInfoType>> logger,
@@ -20,25 +20,26 @@ public abstract class SearchProvider<TLookupInfoType>(
     IRemoteSearchProvider<TLookupInfoType>
 where TLookupInfoType : ItemLookupInfo, new()
 {
-    public Task<IEnumerable<RemoteSearchResult>>
+    public async Task<IEnumerable<RemoteSearchResult>>
     GetSearchResults(TLookupInfoType searchInfo, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("GetSearchResults");
+        var results = new List<RemoteSearchResult>();
 
-        if (string.IsNullOrEmpty(searchInfo.Name))
-        {
-            _logger.LogError("GetSearchResults EMPTY");
-            return Task.FromResult(Enumerable.Empty<RemoteSearchResult>());
+        if (searchInfo.TryGetDefaultId(out var kid))
+            results = [
+                (await _api.Fetch(kid, cancellationToken)).GetSearchResult()
+            ];
+        
+
+        if (!string.IsNullOrWhiteSpace(searchInfo.Name)) {
+            string keyword = (searchInfo.Year == null)
+                ? searchInfo.Name
+                : $"{searchInfo.Name} {searchInfo.Year}";
+
+            await foreach (var metadata in _api.GetSearchResults(keyword, cancellationToken))
+                results.Add(metadata.GetSearchResult());
         }
 
-        var results = new List<RemoteSearchResult> {
-            new() {
-                Name = searchInfo.Name,
-                ProductionYear = searchInfo.Year ?? 2033,
-                ProviderIds = new Dictionary<string, string> { { "TestProvider", $"test-{searchInfo.Name}" } }
-            }
-        };
-
-        return Task.FromResult<IEnumerable<RemoteSearchResult>>(results);
+        return results;
     }
 }
