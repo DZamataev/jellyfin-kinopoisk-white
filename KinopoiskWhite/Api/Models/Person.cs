@@ -1,7 +1,6 @@
 namespace KinopoiskWhite.Api.Models;
 
-public record FilmPerson {
-    public int Id { get; init; }
+public record FilmPerson : BaseMetadata {
     public string Name { get; init; } = "";
     public string OriginalName { get; init; } = "";
     public Gallery[] Gallery { get; init; }

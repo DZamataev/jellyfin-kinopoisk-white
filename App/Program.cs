@@ -14,6 +14,7 @@ class Program {
     private static IApiService _api;
     private static IRemoteImageProvider _imageProvider;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
+    private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
     private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
@@ -28,6 +29,7 @@ class Program {
         serviceCollection.AddSingleton<IApiService, ApiService>();
         serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
 
         var sp = serviceCollection.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true }
@@ -36,6 +38,7 @@ class Program {
         _api = sp.GetRequiredService<IApiService>();
         _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
+        _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();
 
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
@@ -69,11 +72,13 @@ class Program {
         // foreach (var image in images)
         //     Console.WriteLine($"{image}");
 
-        var item = new Person();
-        item.SetDefaultId(25774);
-        var images = await _imageProvider.GetImages(item, _token);
-        foreach (var image in images)
-            Console.WriteLine($"{image.Url}");
+        var item = new PersonLookupInfo();
+        // item.SetDefaultId(25774);
+        item.Name = "арата иура";
+        var result = await _personProvider.GetMetadata(item, _token);
+        // var images = await _imageProvider.GetImages(item, _token);
+        // foreach (var image in images)
+        //     Console.WriteLine($"{image.Url}");
 
         // var item = new MovieInfo();
         // item.SetDefaultId(361);
@@ -83,8 +88,8 @@ class Program {
         // foreach (var result in results)
         //     Console.WriteLine($"{result}");
 
-        var person = await _api.GetPerson(25774, _token);
-        Console.WriteLine($"{person}");
+        // var person = await _api.GetPerson(25774, _token);
+        // Console.WriteLine($"{person}");
 
         Console.WriteLine("Finished");
     }

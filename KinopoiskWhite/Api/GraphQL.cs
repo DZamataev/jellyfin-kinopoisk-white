@@ -15,6 +15,7 @@ using Models;
 public interface IGraphQL
 {
     IAsyncEnumerable<FilmInfo> SuggestSearch(string keyword, CancellationToken cancellationToken);
+    IAsyncEnumerable<FilmPerson> SuggestSearchPerson(string keyword, CancellationToken cancellationToken);
     Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
     Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
     Task<FilmInfo> MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken);
@@ -156,11 +157,45 @@ public class GraphQL : BaseSingleton, IGraphQL
         ).ConfigureAwait(false);
 
         var top = root.GetProperty("topResult").GetProperty("global");
-        yield return JsonSerializer.Deserialize<FilmInfo>(top, _jsonOptions);
+
+        FilmInfo film = null;
+        try
+        {
+            film = JsonSerializer.Deserialize<FilmInfo>(top, _jsonOptions);
+        }
+        catch { }
+
+        if (film != null) yield return film;
 
         foreach (var movie in root.GetProperty("movies").EnumerateArray())
             yield return JsonSerializer.Deserialize<FilmInfo>(
                 movie.GetProperty("movie"), _jsonOptions);
+    }
+
+    public async IAsyncEnumerable<FilmPerson>
+    SuggestSearchPerson(string keyword, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var root = await Call(
+            "SuggestSearch",
+            new { keyword, limit = 10 },
+            "data.suggest.top",
+            cancellationToken
+        ).ConfigureAwait(false);
+
+        var top = root.GetProperty("topResult").GetProperty("global");
+
+        FilmPerson person = null;
+        try
+        {
+            person = JsonSerializer.Deserialize<FilmPerson>(top, _jsonOptions);
+        }
+        catch { }
+
+        if (person != null) yield return person;
+
+        foreach (var movie in root.GetProperty("persons").EnumerateArray())
+            yield return JsonSerializer.Deserialize<FilmPerson>(
+                movie.GetProperty("person"), _jsonOptions);
     }
 
     public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)

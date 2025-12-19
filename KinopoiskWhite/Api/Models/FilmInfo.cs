@@ -1,9 +1,12 @@
 namespace KinopoiskWhite.Api.Models;
 
-public record FilmInfo
+public record BaseMetadata
 {
-    public bool QueriedById { get; init; } = false;
     public int Id { get; init; }
+}
+
+public record FilmInfo: BaseMetadata
+{
     public string ContentId { get; init; } = "";
     public FilmTitle Title { get; init; }
     public FilmRating Rating { get; init; }

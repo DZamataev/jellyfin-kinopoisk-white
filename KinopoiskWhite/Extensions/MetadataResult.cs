@@ -9,6 +9,20 @@ using Api.Models;
 public static class MetadataResultExtensions
 {
     public static void
+    FillFrom<T>(this MetadataResult<T> result, BaseMetadata metadata) where T : BaseItem
+    {
+        switch (metadata)
+        {
+            case FilmInfo film:
+                result.FillFrom(film);
+                break;
+            case FilmPerson person:
+                result.FillFrom(person);
+                break;
+        };
+    }
+
+    private static void
     FillFrom(this BaseItem item, FilmInfo metadata)
     {
         item.SetDefaultId(metadata.Id);
@@ -28,7 +42,7 @@ public static class MetadataResultExtensions
             item.AddGenre(genre.Slug);
     }
 
-    public static void
+    private static void
     FillFrom<T>(this MetadataResult<T> result, FilmInfo metadata) where T : BaseItem
     {
         result.Item.FillFrom(metadata);
@@ -43,7 +57,7 @@ public static class MetadataResultExtensions
         result.HasMetadata = true;
     }
 
-    static void AddCrewMembers<T>(this MetadataResult<T> target, PersonKind type,
+    private static void AddCrewMembers<T>(this MetadataResult<T> target, PersonKind type,
                                   FilmCrewMembers members) where T : BaseItem
     {
         foreach (var member in members?.Items ?? [])
@@ -57,5 +71,21 @@ public static class MetadataResultExtensions
             target.AddPerson(person);
 
         }
+    }
+
+    private static void
+    FillFrom(this BaseItem item, FilmPerson metadata)
+    {
+        item.SetDefaultId(metadata.Id);
+        item.Name = metadata.Name;
+        item.OriginalTitle = metadata.OriginalName;
+        // item.ProductionYear = metadata.BirthDate;
+    }
+
+    private static void
+    FillFrom<T>(this MetadataResult<T> result, FilmPerson metadata) where T : BaseItem
+    {
+        result.Item.FillFrom(metadata);
+        result.HasMetadata = true;
     }
 }
