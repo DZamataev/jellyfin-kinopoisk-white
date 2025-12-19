@@ -78,12 +78,18 @@ where T : BaseMetadata
     }
 }
 
-public class ApiServiceMovie (
+public interface IApiServiceMovie: IApiService<FilmInfo>
+{
+    Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
+}
+
+public class ApiServiceMovie(
     ILogger<ApiServiceMovie> logger,
     IHttpClientFactory httpClientFactory = null,
     IGraphQL graphQL = null
 ) :
-    ApiService<FilmInfo>(logger, httpClientFactory, graphQL)
+    ApiService<FilmInfo>(logger, httpClientFactory, graphQL),
+    IApiServiceMovie
 {
     protected override async Task<FilmInfo> FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
     => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
@@ -131,12 +137,14 @@ public class ApiServiceMovie (
     }
 }
 
+public interface IApiServicePerson: IApiService<FilmPerson> {}
 public class ApiServicePerson (
     ILogger<ApiServicePerson> logger,
     IHttpClientFactory httpClientFactory = null,
     IGraphQL graphQL = null
 ) :
-    ApiService<FilmPerson>(logger, httpClientFactory, graphQL)
+    ApiService<FilmPerson>(logger, httpClientFactory, graphQL),
+    IApiServicePerson
 {
     protected override async Task<FilmPerson> FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
     => await _graphql.GetPerson(kinopoiskId, cancellationToken);

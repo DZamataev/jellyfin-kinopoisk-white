@@ -43,9 +43,10 @@ public class MovieImageProvider
 
         else
         {
-            // if (item.TryGetContentId(out string cid))
-            //     _cache[kid] = await _api.FetchByContentId(cid, cancellationToken)
-            //         .ConfigureAwait(false);
+            if (_api is IApiServiceMovie api)
+                if (item.TryGetContentId(out string cid))
+                    _cache[kid] = await api.FetchByContentId(cid, cancellationToken)
+                        .ConfigureAwait(false);
 
             result = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
 
