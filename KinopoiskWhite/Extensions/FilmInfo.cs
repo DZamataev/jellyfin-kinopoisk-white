@@ -7,11 +7,10 @@ namespace KinopoiskWhite.Extensions;
 
 using Api.Models;
 using Common;
-using Cache = Dictionary<ImageType, List<string>>;
 
 public static class FilmInfoExtensions
 {
-    private static Dictionary<FilmImageType, ImageType> Mapper = new() {
+    private static readonly Dictionary<FilmImageType, ImageType> Mapper = new() {
         {FilmImageType.POSTER, ImageType.Primary},
         {FilmImageType.COVER, ImageType.Primary},
         {FilmImageType.FAN_ART, ImageType.Primary},
@@ -20,9 +19,9 @@ public static class FilmInfoExtensions
         {FilmImageType.SCREENSHOT, ImageType.Backdrop},
     };
 
-    public static Cache GetCache(this FilmInfo metadata)
+    public static IEnumerable<RemoteImageInfo> GetImages(this FilmInfo metadata)
     {
-        Cache result = [];
+        Dictionary<ImageType, List<string>> result = [];
 
         var gallery = metadata?.Gallery;
         if (gallery != null)
@@ -40,20 +39,16 @@ public static class FilmInfoExtensions
         {
             foreach (var item in items)
             {
-                if (!Mapper.TryGetValue(item.Type, out ImageType otype)) continue;
+                if (!Mapper.TryGetValue(item.Type, out ImageType type)) continue;
 
-                if (!result.TryGetValue(otype, out var _))
-                    result[otype] = [];
+                if (!result.TryGetValue(type, out var _))
+                    result[type] = [];
 
-                result[otype].Add(item.Image.Url);
+                result[type].Add(item.Image.Url);
             }
         }
-        return result;
-    }
 
-    public static IEnumerable<RemoteImageInfo> GetImages(this Cache cache)
-    {
-        foreach (var (type, urls) in cache)
+        foreach (var (type, urls) in result)
         {
             foreach (var url in urls)
             {
@@ -68,12 +63,6 @@ public static class FilmInfoExtensions
                 };
             }
         }
-    }
-
-    public static IEnumerable<RemoteImageInfo> GetImages(this FilmInfo metadata)
-    {
-        var cache = metadata.GetCache();
-        return cache.GetImages();
     }
 
     public static RemoteSearchResult GetSearchResult(this FilmInfo metadata)
