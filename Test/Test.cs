@@ -9,7 +9,7 @@ namespace Tests;
 
 
 public class Test {
-    private readonly ApiService _api;
+    private readonly ApiServiceMovie _api;
     public Test()
     {
         // var services = new ServiceCollection();
@@ -17,8 +17,8 @@ public class Test {
         // var sp = services.BuildServiceProvider();
         // sp.GetRequiredService<ILogger<ApiService>>()
 
-        _api = new ApiService(
-            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiService>()
+        _api = new ApiServiceMovie(
+            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiServiceMovie>()
         );
     }
 

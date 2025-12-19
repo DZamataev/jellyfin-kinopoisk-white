@@ -13,25 +13,20 @@ using Api.Models;
 using Common;
 using Extensions;
 
-public abstract class MetadataProvider<TItemType, TLookupInfoType>
+public abstract class MetadataProvider<TItemType, TLookupInfoType, TMetadata>
 (
-    ILogger<MetadataProvider<TItemType, TLookupInfoType>> logger,
+    ILogger<MetadataProvider<TItemType, TLookupInfoType, TMetadata>> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<TMetadata> api
 ) :
-    SearchProvider<TLookupInfoType>(logger, httpClientFactory, api),
+    SearchProvider<TLookupInfoType, TMetadata>(logger, httpClientFactory, api),
     IRemoteMetadataProvider<TItemType, TLookupInfoType>
 
-where TItemType : BaseItem, IHasLookupInfo<TLookupInfoType>
+where TItemType : BaseItem, IHasLookupInfo<TLookupInfoType>, new()
 where TLookupInfoType : ItemLookupInfo, new()
+where TMetadata : BaseMetadata
 {
-    protected abstract TItemType GetItem();
-
-    protected abstract Task<BaseMetadata>
-    GetKinopoiskId(TLookupInfoType info, CancellationToken cancellationToken);
-
-    protected abstract Task<BaseMetadata>
-    Fetch(int kid, CancellationToken cancellationToken);
+    protected abstract string GetSearchKeyword(TLookupInfoType info);
 
     public async Task<MetadataResult<TItemType>>
     GetMetadata(TLookupInfoType info, CancellationToken cancellationToken)
@@ -40,7 +35,7 @@ where TLookupInfoType : ItemLookupInfo, new()
 
         var kid = info.GetDefaultId();
 
-        result.FillFrom(await Fetch(kid, cancellationToken));
+        result.FillFrom(await _api.Fetch(kid, cancellationToken));
 
         _logger.LogInformation("Metadata loaded for {item}", info.Name);
 
@@ -52,12 +47,11 @@ where TLookupInfoType : ItemLookupInfo, new()
     {
         var result = new MetadataResult<TItemType>
         {
+            Item = new(),
             QueriedById = true,
             Provider = Constants.ProviderName,
             ResultLanguage = Constants.ProviderMetadataLanguage,
         };
-
-        result.Item = GetItem();
 
         if (info.HasDefaultId()) return result;
 
@@ -65,7 +59,8 @@ where TLookupInfoType : ItemLookupInfo, new()
 
         result.QueriedById = false;
 
-        result.FillFrom(await GetKinopoiskId(info, cancellationToken));
+        var keyword = GetSearchKeyword(info);
+        result.FillFrom(await _api.GetKinopoiskId(keyword, cancellationToken));
         info.SetDefaultId(result.Item.GetDefaultId());
 
         _logger.LogInformation("Found item {name} as {newName}", info.Name, result.Item.Name);
@@ -78,36 +73,20 @@ public class MovieMetadataProvider
 (
     ILogger<MovieMetadataProvider> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<FilmInfo> api
 ) :
-    MetadataProvider<Movie, MovieInfo>(logger, httpClientFactory, api)
+    MetadataProvider<Movie, MovieInfo, FilmInfo>(logger, httpClientFactory, api)
 {
-    protected override Movie GetItem() => new ();
-
-    protected override async Task<BaseMetadata>
-    GetKinopoiskId(MovieInfo info, CancellationToken cancellationToken)
-    => await _api.GetKinopoiskId(info.Path, cancellationToken);
-
-    protected override async Task<BaseMetadata>
-    Fetch(int kid, CancellationToken cancellationToken)
-    => await _api.Fetch(kid, cancellationToken);
+    protected override string GetSearchKeyword(MovieInfo info) => info.Path;
 }
 
 public class PersonMetadataProvider
 (
     ILogger<PersonMetadataProvider> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<FilmPerson> api
 ) :
-    MetadataProvider<Person, PersonLookupInfo>(logger, httpClientFactory, api)
+    MetadataProvider<Person, PersonLookupInfo, FilmPerson>(logger, httpClientFactory, api)
 {
-    protected override Person GetItem() => new ();
-
-    protected override async Task<BaseMetadata>
-    GetKinopoiskId(PersonLookupInfo info, CancellationToken cancellationToken)
-    => await _api.GetKinopoiskIdPerson(info.Name, cancellationToken);
-
-    protected override async Task<BaseMetadata>
-    Fetch(int kid, CancellationToken cancellationToken)
-    => await _api.GetPerson(kid, cancellationToken);
+    protected override string GetSearchKeyword(PersonLookupInfo info) => info.Name;
 }

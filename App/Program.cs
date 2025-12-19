@@ -7,11 +7,12 @@ using KinopoiskWhite.Providers;
 using KinopoiskWhite.Extensions;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
+using KinopoiskWhite.Api.Models;
 
 namespace App; 
 
 class Program {
-    private static IApiService _api;
+    private static IApiService<FilmInfo> _apiMovies;
     private static IRemoteImageProvider _imageProvider;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
     private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
@@ -26,7 +27,7 @@ class Program {
             builder.AddFilter("KinopoiskWhite.Api.GraphQL", LogLevel.Trace);
         });
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
-        serviceCollection.AddSingleton<IApiService, ApiService>();
+        serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
         serviceCollection.AddSingleton<IRemoteImageProvider, PersonImageProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
@@ -35,7 +36,7 @@ class Program {
             new ServiceProviderOptions { ValidateOnBuild = true }
         );
 
-        _api = sp.GetRequiredService<IApiService>();
+        _apiMovies = sp.GetRequiredService<IApiService<FilmInfo>>();
         _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
         _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();

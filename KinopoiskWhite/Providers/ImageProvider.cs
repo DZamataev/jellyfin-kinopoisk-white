@@ -21,9 +21,9 @@ public class MovieImageProvider
 (
     ILogger<MovieImageProvider> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<FilmInfo> api
 ) :
-    BaseProvider(logger, httpClientFactory, api),
+    BaseProvider<FilmInfo>(logger, httpClientFactory, api),
     IRemoteImageProvider
 {
     private readonly Dictionary<int, FilmInfo> _cache = [];
@@ -43,9 +43,9 @@ public class MovieImageProvider
 
         else
         {
-            if (item.TryGetContentId(out string cid))
-                _cache[kid] = await _api.FetchByContentId(cid, cancellationToken)
-                    .ConfigureAwait(false);
+            // if (item.TryGetContentId(out string cid))
+            //     _cache[kid] = await _api.FetchByContentId(cid, cancellationToken)
+            //         .ConfigureAwait(false);
 
             result = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
 
@@ -62,9 +62,9 @@ public class PersonImageProvider
 (
     ILogger<PersonImageProvider> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<FilmPerson> api
 ) :
-    BaseProvider(logger, httpClientFactory, api),
+    BaseProvider<FilmPerson>(logger, httpClientFactory, api),
     IRemoteImageProvider
 {
     private readonly Dictionary<int, FilmPerson> _cache = [];
@@ -83,7 +83,7 @@ public class PersonImageProvider
 
         else
         {
-            result = await _api.GetPerson(kid, cancellationToken).ConfigureAwait(false);
+            result = await _api.GetImages(kid, cancellationToken).ConfigureAwait(false);
             _cache[kid] = result;
         }
         return result.GetImages();

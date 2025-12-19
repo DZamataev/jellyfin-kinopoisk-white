@@ -1,12 +1,22 @@
-namespace KinopoiskWhite.Api.Models;
+using MediaBrowser.Model.Providers;
 
-public record BaseMetadata
+namespace KinopoiskWhite.Api.Models;
+using Extensions;
+
+public abstract record BaseMetadata
 {
     public int Id { get; init; }
+
+    public abstract string GetRootPath();
+    public abstract string GetItemPath();
+    public abstract RemoteSearchResult GetSearchResult();
 }
 
 public record FilmInfo: BaseMetadata
 {
+    public override string GetRootPath() => "movies";
+    public override string GetItemPath() => "movie";
+
     public string ContentId { get; init; } = "";
     public FilmTitle Title { get; init; }
     public FilmRating Rating { get; init; }
@@ -104,5 +114,33 @@ public record FilmInfo: BaseMetadata
             public string Accuracy { get; init; } = "";
             public string Date { get; init; } = "";
         }
+    }
+
+    public override RemoteSearchResult GetSearchResult()
+    {
+        string title;
+        if (!string.IsNullOrWhiteSpace(Title.Russian))
+        {
+            title = Title.Russian;
+            if (!string.IsNullOrWhiteSpace(Title.Original))
+                title += $" ({Title.Original})";
+        }
+        else
+            title = Title.Original;
+
+        RemoteSearchResult result = new()
+        {
+            Name = title,
+            ProductionYear = ProductionYear,
+            ImageUrl = (
+                Gallery?.Posters?.HdVertical ??
+                Gallery?.Posters?.KpVertical ??
+                Gallery?.Posters?.Vertical ??
+                Gallery?.Posters?.MarketingVertical
+            )?.Medium,
+        };
+        result.SetDefaultId(Id);
+        result.SetContentId(ContentId);
+        return result;
     }
 }
