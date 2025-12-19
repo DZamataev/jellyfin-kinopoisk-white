@@ -13,9 +13,9 @@ using Api.Models;
 using Common;
 using Extensions;
 
-public abstract class RemoteMetadataProvider<TItemType, TLookupInfoType>
+public abstract class MetadataProvider<TItemType, TLookupInfoType>
 (
-    ILogger<RemoteMetadataProvider<TItemType, TLookupInfoType>> logger,
+    ILogger<MetadataProvider<TItemType, TLookupInfoType>> logger,
     IHttpClientFactory httpClientFactory,
     IApiService api
 ) :
@@ -38,7 +38,9 @@ where TLookupInfoType : ItemLookupInfo, new()
     {
         var result = await ResolveInfo(info, cancellationToken);
 
-        result.FillFrom(await Fetch(result.Item.GetDefaultId(), cancellationToken));
+        var kid = info.GetDefaultId();
+
+        result.FillFrom(await Fetch(kid, cancellationToken));
 
         _logger.LogInformation("Metadata loaded for {item}", info.Name);
 
@@ -64,6 +66,7 @@ where TLookupInfoType : ItemLookupInfo, new()
         result.QueriedById = false;
 
         result.FillFrom(await GetKinopoiskId(info, cancellationToken));
+        info.SetDefaultId(result.Item.GetDefaultId());
 
         _logger.LogInformation("Found item {name} as {newName}", info.Name, result.Item.Name);
 
@@ -77,7 +80,7 @@ public class MovieMetadataProvider
     IHttpClientFactory httpClientFactory,
     IApiService api
 ) :
-    RemoteMetadataProvider<Movie, MovieInfo>(logger, httpClientFactory, api)
+    MetadataProvider<Movie, MovieInfo>(logger, httpClientFactory, api)
 {
     protected override Movie GetItem() => new ();
 
@@ -96,7 +99,7 @@ public class PersonMetadataProvider
     IHttpClientFactory httpClientFactory,
     IApiService api
 ) :
-    RemoteMetadataProvider<Person, PersonLookupInfo>(logger, httpClientFactory, api)
+    MetadataProvider<Person, PersonLookupInfo>(logger, httpClientFactory, api)
 {
     protected override Person GetItem() => new ();
 

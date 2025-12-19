@@ -16,53 +16,27 @@ using Api;
 using Api.Models;
 using Extensions;
 
-public class RemoteImageProvider
+
+public class MovieImageProvider
 (
-    ILogger<RemoteImageProvider> logger,
+    ILogger<MovieImageProvider> logger,
     IHttpClientFactory httpClientFactory,
     IApiService api
 ) :
     BaseProvider(logger, httpClientFactory, api),
     IRemoteImageProvider
 {
-    public bool Supports(BaseItem item) => (
-        item is Movie ||
-        item is Person
-    );
     private readonly Dictionary<int, FilmInfo> _cache = [];
-
-    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) =>
-    [
+    public bool Supports(BaseItem item) => item is Movie;
+    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [
         ImageType.Primary,
-        ImageType.Backdrop,
+        ImageType.Backdrop
     ];
 
     public async Task<IEnumerable<RemoteImageInfo>>
     GetImages(BaseItem item, CancellationToken cancellationToken)
-    => item switch
-    {
-        Movie movie => await GetImages(movie, cancellationToken),
-        Person person => await GetImages(person, cancellationToken),
-        _ => [],
-    };
-
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(Movie item, CancellationToken cancellationToken)
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
-        // {
-        //     _logger.LogDebug("Looking for kid by path {path}", item.Path);
-
-        //     var initial = await _api.GetKinopoiskId(item.Path, cancellationToken)
-        //         .ConfigureAwait(false);
-
-        //     kid = initial.Id;
-
-        //     if (_cache.TryGetValue(kid, out FilmInfo _))
-        //         throw new System.Exception($"Cache conflict {kid}");
-
-        //     _cache[kid] = initial;
-        // }
 
         if (_cache.TryGetValue(kid, out FilmInfo result))
             _logger.LogDebug("Getting cached by {kid}", kid);
@@ -82,23 +56,36 @@ public class RemoteImageProvider
         }
         return result.GetImages();
     }
+}
+
+public class PersonImageProvider
+(
+    ILogger<PersonImageProvider> logger,
+    IHttpClientFactory httpClientFactory,
+    IApiService api
+) :
+    BaseProvider(logger, httpClientFactory, api),
+    IRemoteImageProvider
+{
+    private readonly Dictionary<int, FilmPerson> _cache = [];
+    public bool Supports(BaseItem item) => item is Person;
+    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [ImageType.Primary];
 
     public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(Person item, CancellationToken cancellationToken)
+    GetImages(BaseItem item, CancellationToken cancellationToken)
     {
+        if (!item.TryGetDefaultId(out int kid)) return [];
+
         _logger.LogDebug("Getting images for {name}", item.Name);
 
-        if (!item.TryGetDefaultId(out int kid)) return [];
-        // {
-        //     _logger.LogDebug("Looking for kid by name {name}", item.Name);
+        if (_cache.TryGetValue(kid, out FilmPerson result))
+            _logger.LogDebug("Getting cached by {kid}", kid);
 
-        //     var initial = await _api.GetKinopoiskIdPerson(item.Name, cancellationToken)
-        //         .ConfigureAwait(false);
-
-        //     kid = initial.Id;
-        // }
-
-        var result = await _api.GetPerson(kid, cancellationToken).ConfigureAwait(false);
+        else
+        {
+            result = await _api.GetPerson(kid, cancellationToken).ConfigureAwait(false);
+            _cache[kid] = result;
+        }
         return result.GetImages();
     }
 }

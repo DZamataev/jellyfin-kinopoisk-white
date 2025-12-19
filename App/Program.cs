@@ -27,7 +27,7 @@ class Program {
         });
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         serviceCollection.AddSingleton<IApiService, ApiService>();
-        serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider>();
+        serviceCollection.AddSingleton<IRemoteImageProvider, PersonImageProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
 
@@ -73,9 +73,10 @@ class Program {
         //     Console.WriteLine($"{image}");
 
         var item = new PersonLookupInfo();
-        // item.SetDefaultId(25774);
-        item.Name = "арата иура";
+        item.SetDefaultId(419797);
+        // item.Name = "арата иура";
         var result = await _personProvider.GetMetadata(item, _token);
+        Console.WriteLine($"{result.Item.Name}");
         // var images = await _imageProvider.GetImages(item, _token);
         // foreach (var image in images)
         //     Console.WriteLine($"{image.Url}");

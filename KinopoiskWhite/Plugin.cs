@@ -56,7 +56,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         serviceCollection.AddSingleton<IApiService, ApiService>();
-        serviceCollection.AddSingleton<IImageProvider, RemoteImageProvider>();
 
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>,
                                        MovieMetadataProvider>();
