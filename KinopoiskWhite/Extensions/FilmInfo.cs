@@ -5,6 +5,7 @@ using ImageType = MediaBrowser.Model.Entities.ImageType;
 
 namespace KinopoiskWhite.Extensions;
 
+using System.Linq;
 using Api.Models;
 using Common;
 
@@ -63,6 +64,23 @@ public static class FilmInfoExtensions
                 };
             }
         }
+    }
+
+    public static IEnumerable<RemoteImageInfo> GetImages(this FilmPerson person)
+    {
+        string[] urls = [
+            person.Img?.PosterMedium?.X2,
+            .. person.Gallery.Select(item => $"{item.BaseUrl}/576x").ToArray(),
+        ];
+
+        foreach (var url in urls.Where(x => x != null))
+            yield return new RemoteImageInfo
+            {
+                Type = ImageType.Primary,
+                Url = $"https:{url}",
+                Language = Constants.ProviderMetadataLanguage,
+                ProviderName = Constants.ProviderName,
+            };
     }
 
     public static RemoteSearchResult GetSearchResult(this FilmInfo metadata)

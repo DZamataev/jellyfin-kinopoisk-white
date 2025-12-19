@@ -57,7 +57,7 @@ public class GraphQL : BaseSingleton, IGraphQL
     private static string GetEmbeddedQuery(string fileName)
     {
         var assembly = typeof(GraphQL).Assembly;
-        var resourceName = $"Plugin.Api.Queries.{fileName}.gql";
+        var resourceName = $"KinopoiskWhite.Api.Queries.{fileName}.gql";
 
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null) throw new FileNotFoundException($"Resource {resourceName} not found");

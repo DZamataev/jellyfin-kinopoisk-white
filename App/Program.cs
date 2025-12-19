@@ -5,6 +5,7 @@ using MediaBrowser.Controller.Providers;
 using KinopoiskWhite.Api;
 using KinopoiskWhite.Providers;
 using KinopoiskWhite.Extensions;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 
 namespace App; 
@@ -67,6 +68,12 @@ class Program {
         // var images = await _imageProvider.GetImages(item, _token);
         // foreach (var image in images)
         //     Console.WriteLine($"{image}");
+
+        var item = new Person();
+        item.SetDefaultId(25774);
+        var images = await _imageProvider.GetImages(item, _token);
+        foreach (var image in images)
+            Console.WriteLine($"{image.Url}");
 
         // var item = new MovieInfo();
         // item.SetDefaultId(361);
