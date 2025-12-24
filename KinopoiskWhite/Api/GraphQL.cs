@@ -3,15 +3,16 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KinopoiskWhite.Api;
 
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Common;
-using Microsoft.Extensions.DependencyInjection;
 using Models;
+using Providers;
 
 public interface IGraphQL
 {

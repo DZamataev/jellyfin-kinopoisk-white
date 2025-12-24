@@ -1,12 +1,11 @@
-﻿using System.Net.Http;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+using MediaBrowser.Common.Plugins;
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
-using MediaBrowser.Common.Plugins;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Plugins;
@@ -16,7 +15,6 @@ using MediaBrowser.Controller.Entities.Movies;
 namespace KinopoiskWhite;
 
 using Api;
-using Api.Models;
 using Common;
 using Providers;
 
@@ -53,39 +51,11 @@ public record ExternalId : IExternalId
 
 public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
-    public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
+    public void RegisterServices(IServiceCollection service, IServerApplicationHost applicationHost)
     {
-        GraphQL.RegisterServices(serviceCollection);
-        serviceCollection.AddSingleton<IGraphQL, GraphQL>();
-        serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
-        serviceCollection.AddSingleton<IApiService<FilmPerson>, ApiServicePerson>();
-
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>,
-                                       MovieMetadataProvider>();
-
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>,
-                                       PersonMetadataProvider>();
-    }
-}
-
-public abstract class Base {
-    #pragma warning disable CA1822 // Mark members as static
-    public string Name => Constants.ProviderName;
-    public string Description => Constants.ProviderDescription;
-    #pragma warning restore CA1822 // Mark members as static
-}
-
-public abstract class BaseSingleton: Base {
-    protected readonly ILogger _logger;
-    protected readonly IHttpClientFactory _httpClientFactory;
-
-    protected BaseSingleton (
-        ILogger logger,
-        IHttpClientFactory httpClientFactory)
-    {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-
-        _logger?.LogDebug("INIT");
+        GraphQL.RegisterServices(service);
+        service.AddSingleton<IGraphQL, GraphQL>();
+        service.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieProvider>();
+        // service.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonProvider>();
     }
 }
