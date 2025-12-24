@@ -22,6 +22,9 @@ public static partial class StringExtensions
     [GeneratedRegex(@"((?:19|20)\d{2})")]
     private static partial Regex ByYear();
 
+    [GeneratedRegex(@"(?i:EXTENDED|BDRIP|BRRIP|DVDRIP)")]
+    private static partial Regex VideoFormats();
+
     public static (string, int?)[] ParseFileName(this string path)
     {
         var fileName = System.IO.Path.GetFileName(path);
@@ -32,7 +35,7 @@ public static partial class StringExtensions
 
         for (int index = parts.Length - 1; index >= 0; index--)
         {
-            if (!Regex.IsMatch(parts[index], $"^{byYear.ToString()}$")) continue;
+            if (!Regex.IsMatch(parts[index], $"^{byYear}$")) continue;
 
             var title = string.Join(" ", parts.Take(index));
             int year = int.Parse(parts[index]);
@@ -41,6 +44,12 @@ public static partial class StringExtensions
 
         var fullName = FileExtension().Replace(fileName, "");
         set.Add((fullName, null));
+
+        void Add(List<(string, int?)> result, string title, int? year)
+        {
+            if (!result.Contains((title, year)))
+                result.Add((title, year));
+        }
 
         var ordered = set.OrderBy(x => x.Item1.Length).ThenBy(x => x.Item2 != null);
         var result = ordered.Aggregate(
@@ -52,19 +61,17 @@ public static partial class StringExtensions
             title = AllButWords().Replace(title, " ").Trim();
             if (title == string.Empty) return result;
 
-            if (!result.Contains((title, year)))
-                result.Add((title, year));
+            Add(result, title, year);
+            Add(result, title, null);
 
-            if (!result.Contains((title, null)))
-                result.Add((title, null));
+            title = VideoFormats().Replace(title, "").Trim();
+            Add(result, title, year);
 
             title = LeadingDigits().Replace(title, "").Trim();
-            if (!result.Contains((title, year)))
-                result.Add((title, year));
+            Add(result, title, year);
 
             title = TrailingDigits().Replace(title, "").Trim();
-            if (!result.Contains((title, year)))
-                result.Add((title, year));
+            Add(result, title, year);
 
             return result;
         });
