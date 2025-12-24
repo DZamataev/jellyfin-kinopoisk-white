@@ -55,6 +55,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
+        GraphQL.RegisterServices(serviceCollection);
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
         serviceCollection.AddSingleton<IApiService<FilmPerson>, ApiServicePerson>();
