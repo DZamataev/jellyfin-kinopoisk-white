@@ -9,29 +9,26 @@ namespace KinopoiskWhite.Api;
 using Models;
 using Extensions;
 
-public interface IApiService
+public interface IApiService<T>
 {
-    IAsyncEnumerable<FilmInfo> GetSearchResults(string path, CancellationToken cancellationToken);
-    Task<FilmInfo> GetKinopoiskId(string path, CancellationToken cancellationToken);
-    Task<FilmInfo> Fetch(int kinopoiskId, CancellationToken cancellationToken);
-    Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
-    Task<FilmInfo> GetImages(int kid, CancellationToken cancellationToken);
+    IAsyncEnumerable<T> GetSearchResults(string path, CancellationToken cancellationToken);
+    Task<T> GetKinopoiskId(string path, CancellationToken cancellationToken);
+    Task<T> Fetch(int kinopoiskId, CancellationToken cancellationToken);
+    Task<T> GetImages(int kid, CancellationToken cancellationToken);
 }
 
-public class ApiService : BaseSingleton, IApiService
+public abstract class ApiService<T>(
+    ILogger<ApiService<T>> logger,
+    IHttpClientFactory httpClientFactory = null,
+    IGraphQL graphQL = null
+) :
+    BaseSingleton(logger, httpClientFactory),
+    IApiService<T>
+where T : BaseMetadata
 {
-    private readonly IGraphQL _graphql;
+    protected readonly IGraphQL _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
 
-    public ApiService(
-        ILogger<ApiService> logger,
-        IHttpClientFactory httpClientFactory = null,
-        IGraphQL graphQL = null)
-    : base(logger, httpClientFactory)
-    {
-        _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
-    }
-
-    public async IAsyncEnumerable<FilmInfo>
+    public async IAsyncEnumerable<T>
     GetSearchResults(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get search results {path}", path);
@@ -44,52 +41,61 @@ public class ApiService : BaseSingleton, IApiService
 
             string keyword = (year == null) ? title : $"{title} {year}";
 
-            await foreach (var film in _graphql.SuggestSearch(keyword, cancellationToken))
+            await foreach (var film in _graphql.SuggestSearch<T>(keyword, cancellationToken))
                 if (film?.Id != null)
                     yield return film;
         }
     }
 
-    public async Task<FilmInfo>
+    public async Task<T>
     GetKinopoiskId(string path, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get kinopoisk ID {path}", path);
 
-        await foreach (var film in GetSearchResults(path, cancellationToken))
-            return film;
+        await foreach (var item in GetSearchResults(path, cancellationToken))
+            return item;
 
         throw new System.Exception($"Get Kinopoisk Id failed [{path}]");
     }
 
-    public async Task<FilmInfo>
-    Fetch(int kinopoiskId, CancellationToken cancellationToken)
+    protected abstract Task<T> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);
+    public async Task<T> Fetch(int kinopoiskId, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Fetch {kid}", kinopoiskId);
-
-        var film = await _graphql
-            .FilmBaseInfo(kinopoiskId, cancellationToken);
-        
+        var film = await FetchAsync(kinopoiskId, cancellationToken);
         return film ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed KID {kinopoiskId}");
     }
 
-    public async Task<FilmInfo>
-    FetchByContentId(string contentId, CancellationToken cancellationToken)
-    {
-        _logger.LogDebug("Fetch by content id {cid}", contentId);
-
-        var film = await _graphql
-            .FilmPage(contentId, cancellationToken);
-
-        return film ?? throw new System.Exception(
-            $"Get Kinopoisk metadata failed CID {contentId}");
-    }
-
-    public async Task<FilmInfo>
+    protected abstract Task<T> GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken);
+    public async Task<T>
     GetImages(int kinopoiskId, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get images {kid}", kinopoiskId);
+        var result = await GetImagesAsync(kinopoiskId, cancellationToken);
+        return result ?? throw new System.Exception(
+            $"Get Kinopoisk metadata failed KID {kinopoiskId}");
+    }
+}
 
+public interface IApiServiceMovie: IApiService<FilmInfo>
+{
+    Task<FilmInfo> FetchByContentId(string contentId, CancellationToken cancellationToken);
+}
+
+public class ApiServiceMovie(
+    ILogger<ApiServiceMovie> logger,
+    IHttpClientFactory httpClientFactory = null,
+    IGraphQL graphQL = null
+) :
+    ApiService<FilmInfo>(logger, httpClientFactory, graphQL),
+    IApiServiceMovie
+{
+    protected override async Task<FilmInfo> FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
+    => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
+
+    protected override async Task<FilmInfo> GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken)
+    {
         FilmInfo result = null;
         var resultCounter = "";
 
@@ -117,4 +123,32 @@ public class ApiService : BaseSingleton, IApiService
         _logger.LogDebug(resultCounter);
         return result;
     }
+
+    public async Task<FilmInfo>
+    FetchByContentId(string contentId, CancellationToken cancellationToken)
+    {
+        _logger.LogDebug("Fetch by content id {cid}", contentId);
+
+        var film = await _graphql
+            .FilmPage(contentId, cancellationToken);
+
+        return film ?? throw new System.Exception(
+            $"Get Kinopoisk metadata failed CID {contentId}");
+    }
+}
+
+public interface IApiServicePerson: IApiService<FilmPerson> {}
+public class ApiServicePerson (
+    ILogger<ApiServicePerson> logger,
+    IHttpClientFactory httpClientFactory = null,
+    IGraphQL graphQL = null
+) :
+    ApiService<FilmPerson>(logger, httpClientFactory, graphQL),
+    IApiServicePerson
+{
+    protected override async Task<FilmPerson> FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
+    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
+
+    protected override async Task<FilmPerson> GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken)
+    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
 }

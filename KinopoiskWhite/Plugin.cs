@@ -8,14 +8,15 @@ using MediaBrowser.Model.Serialization;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 
 namespace KinopoiskWhite;
 
 using Api;
+using Api.Models;
 using Common;
 using Providers;
 
@@ -44,7 +45,10 @@ public record ExternalId : IExternalId
     public string ProviderName => Constants.ProviderName;
     public string UrlFormatString => "https://www.kinopoisk.ru/film/{0}";
     public ExternalIdMediaType? Type => null;
-    public bool Supports(IHasProviderIds item) => item is Movie || item is Series;
+    public bool Supports(IHasProviderIds item) => (
+        item is Movie ||
+        item is Person
+    );
 }
 
 public class PluginServiceRegistrator : IPluginServiceRegistrator
@@ -52,9 +56,14 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
-        serviceCollection.AddSingleton<IApiService, ApiService>();
-        serviceCollection.AddSingleton<IImageProvider, RemoteImageProvider>();
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
+        serviceCollection.AddSingleton<IApiService<FilmPerson>, ApiServicePerson>();
+
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>,
+                                       MovieMetadataProvider>();
+
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>,
+                                       PersonMetadataProvider>();
     }
 }
 

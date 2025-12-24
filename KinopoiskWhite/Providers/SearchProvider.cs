@@ -9,16 +9,18 @@ using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers;
 using Api;
+using Api.Models;
 using Extensions;
 
-public abstract class SearchProvider<TLookupInfoType>(
-    ILogger<SearchProvider<TLookupInfoType>> logger,
+public abstract class SearchProvider<TLookupInfoType, TMetadata>(
+    ILogger<SearchProvider<TLookupInfoType, TMetadata>> logger,
     IHttpClientFactory httpClientFactory,
-    IApiService api
+    IApiService<TMetadata> api
 ) :
-    BaseProvider(logger, httpClientFactory, api),
+    BaseProvider<TMetadata>(logger, httpClientFactory, api),
     IRemoteSearchProvider<TLookupInfoType>
 where TLookupInfoType : ItemLookupInfo, new()
+where TMetadata : BaseMetadata
 {
     public async Task<IEnumerable<RemoteSearchResult>>
     GetSearchResults(TLookupInfoType searchInfo, CancellationToken cancellationToken)

@@ -9,7 +9,7 @@ namespace Tests;
 
 
 public class Test {
-    private readonly ApiService _api;
+    private readonly ApiServiceMovie _api;
     public Test()
     {
         // var services = new ServiceCollection();
@@ -17,8 +17,8 @@ public class Test {
         // var sp = services.BuildServiceProvider();
         // sp.GetRequiredService<ILogger<ApiService>>()
 
-        _api = new ApiService(
-            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiService>()
+        _api = new ApiServiceMovie(
+            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiServiceMovie>()
         );
     }
 
@@ -38,11 +38,11 @@ public class Test {
     [InlineData("2001.A.Space.Odyssey.1968.1080p.BluRay.x264-[YTS.AM].mp4", "2001 A Space Odyssey", 1968, 0)]
     // position = 1
     [InlineData("Бумер Фильм второй_745.avi", "Бумер Фильм второй", null, 1)]
+    [InlineData("Rock.n.Rolla.brrip.mkv", "Rock n Rolla", null, 1)]
     // position = 2
     [InlineData("Blade.Runner.2054.mp4", "Blade Runner 2054", null, 2)]
     [InlineData("04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv", "Сумерки Сага Рассвет Часть 1", 2011, 2)]
-    // [InlineData("Walk.the.Line.EXTENDED.2005.1080p.BrRip.x264.YIFY.mp4", "Walk the Line", 2005)]
-    // [InlineData("Rock.n.Rolla.brrip.mkv", "Rock n Rolla", null)]
+    [InlineData("Walk.the.Line.EXTENDED.2005.1080p.BrRip.x264.YIFY.mp4", "Walk the Line", 2005, 2)]
     public void ShouldGetListOfTitles(string path, string exTitle, int? exYear, int exPosition = 0)
     {
         var list = path.ParseFileName();

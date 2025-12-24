@@ -6,13 +6,14 @@ using Microsoft.Extensions.Logging;
 namespace KinopoiskWhite.Providers;
 
 using Api;
+using Api.Models;
 
-
-public abstract class BaseProvider: BaseSingleton
+public abstract class BaseProvider<TMetadata>: BaseSingleton
+where TMetadata : BaseMetadata
 {
-    protected readonly IApiService _api;
+    protected readonly IApiService<TMetadata> _api;
 
-    protected BaseProvider(ILogger logger, IHttpClientFactory httpClientFactory, IApiService api)
+    protected BaseProvider(ILogger logger, IHttpClientFactory httpClientFactory, IApiService<TMetadata> api)
     : base(logger, httpClientFactory)
     {
         _api = api;

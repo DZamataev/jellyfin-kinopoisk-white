@@ -5,14 +5,17 @@ using MediaBrowser.Controller.Providers;
 using KinopoiskWhite.Api;
 using KinopoiskWhite.Providers;
 using KinopoiskWhite.Extensions;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
+using KinopoiskWhite.Api.Models;
 
 namespace App; 
 
 class Program {
-    private static IApiService _api;
+    private static IApiService<FilmInfo> _apiMovies;
     private static IRemoteImageProvider _imageProvider;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
+    private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
     private static readonly CancellationToken _token = CancellationToken.None;
     
     private static void Prepare()
@@ -24,17 +27,19 @@ class Program {
             builder.AddFilter("KinopoiskWhite.Api.GraphQL", LogLevel.Trace);
         });
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
-        serviceCollection.AddSingleton<IApiService, ApiService>();
-        serviceCollection.AddSingleton<IRemoteImageProvider, RemoteImageProvider>();
+        serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
+        serviceCollection.AddSingleton<IRemoteImageProvider, PersonImageProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
 
         var sp = serviceCollection.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true }
         );
 
-        _api = sp.GetRequiredService<IApiService>();
+        _apiMovies = sp.GetRequiredService<IApiService<FilmInfo>>();
         _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
+        _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();
 
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
@@ -68,13 +73,25 @@ class Program {
         // foreach (var image in images)
         //     Console.WriteLine($"{image}");
 
-        var item = new MovieInfo();
-        item.SetDefaultId(361);
-        item.Name = "fight club";
-        item.Year = 1999;
-        var results = await _movieProvider.GetSearchResults(item, _token);
-        foreach (var result in results)
-            Console.WriteLine($"{result}");
+        var item = new PersonLookupInfo();
+        item.SetDefaultId(419797);
+        // item.Name = "арата иура";
+        var result = await _personProvider.GetMetadata(item, _token);
+        Console.WriteLine($"{result.Item.Name}");
+        // var images = await _imageProvider.GetImages(item, _token);
+        // foreach (var image in images)
+        //     Console.WriteLine($"{image.Url}");
+
+        // var item = new MovieInfo();
+        // item.SetDefaultId(361);
+        // item.Name = "fight club";
+        // item.Year = 1999;
+        // var results = await _movieProvider.GetSearchResults(item, _token);
+        // foreach (var result in results)
+        //     Console.WriteLine($"{result}");
+
+        // var person = await _api.GetPerson(25774, _token);
+        // Console.WriteLine($"{person}");
 
         Console.WriteLine("Finished");
     }
