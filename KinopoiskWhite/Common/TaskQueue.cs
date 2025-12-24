@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Channels;
 
@@ -5,9 +6,9 @@ namespace KinopoiskWhite.Common;
 
 public class TaskQueue
 {
-    private readonly Channel<System.Func<Task>> _channel;
-    private readonly Task _processor;
-    private System.Threading.CancellationTokenSource _cts = new();
+    protected readonly Channel<System.Func<Task>> _channel;
+    protected readonly Task _processor;
+    protected readonly CancellationTokenSource _cts = new();
 
     public TaskQueue(int capacity = 100)
     {
@@ -33,7 +34,8 @@ public class TaskQueue
     public async Task<T> Enqueue<T>(System.Func<Task<T>> task)
     {
         var completion = new TaskCompletionSource<T>();
-        var wrapper = async () =>
+
+        async Task wrapper()
         {
             try
             {
@@ -44,7 +46,8 @@ public class TaskQueue
             {
                 completion.SetException(ex);
             }
-        };
+        }
+
         await _channel.Writer.WriteAsync(wrapper, _cts.Token);
         return await completion.Task;
     }
