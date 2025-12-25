@@ -27,6 +27,8 @@ public static partial class StringExtensions
 
     public static (string, int?)[] ParseFileName(this string path)
     {
+        if (string.IsNullOrWhiteSpace(path)) return [];
+
         var fileName = System.IO.Path.GetFileName(path);
         var byYear = ByYear();
         var parts = byYear.Split(fileName);

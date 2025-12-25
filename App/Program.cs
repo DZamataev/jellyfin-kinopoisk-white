@@ -14,7 +14,7 @@ namespace App;
 
 class Program {
     // private static IApiService<FilmInfo> _apiMovies;
-    private static IRemoteImageProvider _imageProvider;
+    // private static IRemoteImageProvider _imageProvider;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
     private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
     private static readonly CancellationToken _token = CancellationToken.None;
@@ -89,7 +89,7 @@ class Program {
         // item.Name = "fight club";
         // item.Year = 1999;
         var result = await _movieProvider.GetMetadata(item, _token);
-        Console.WriteLine($"{result.Item.Name}");
+        Console.WriteLine($"{result?.Item?.Name}");
 
         // var person = await _api.GetPerson(25774, _token);
         // Console.WriteLine($"{person}");

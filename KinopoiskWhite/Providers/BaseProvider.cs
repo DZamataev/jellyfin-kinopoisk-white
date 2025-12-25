@@ -77,7 +77,7 @@ where TMetadata : BaseMetadata
         await foreach (var item in GetSearchResults(path, cancellationToken))
             return item;
 
-        throw new System.Exception($"Get Kinopoisk Id failed [{path}]");
+        throw new System.Exception($"Get Kinopoisk Id failed [{path ?? "NULL"}]");
     }
 
     protected abstract Task<TMetadata> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);

@@ -24,14 +24,21 @@ where TMetadata : BaseMetadata
     IRemoteMetadataProvider<TItemType, TLookupInfoType>.GetMetadata
     (TLookupInfoType info, CancellationToken cancellationToken)
     {
-        var result = await ResolveInfo(info, cancellationToken);
+        MetadataResult<TItemType> result = null;
+        try
+        {
+            result = await ResolveInfo(info, cancellationToken);
 
-        var kid = info.GetDefaultId();
+            var kid = info.GetDefaultId();
 
-        var metadata = await Fetch(kid, cancellationToken);
+            var metadata = await Fetch(kid, cancellationToken);
 
-        result.FillFrom(metadata ?? throw new System.Exception("Metadata is NULL"));
-
+            result.FillFrom(metadata ?? throw new System.Exception("Metadata is NULL"));
+        }
+        catch (System.Exception ex)
+        {
+            Logger.LogError("{message}", ex.Message);
+        }
         return result;
     }
 
