@@ -11,7 +11,8 @@ using Api;
 using Common;
 using Api.Models;
 using Extensions;
-
+using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 public abstract class Base {
     #pragma warning disable CA1822 // Mark members as static
@@ -23,32 +24,25 @@ public abstract class Base {
 
 public abstract class BaseSingleton: Base {
     protected readonly ILogger _logger;
-    protected readonly IHttpClientFactory _httpClientFactory;
-
-    protected BaseSingleton (
-        ILogger logger,
-        IHttpClientFactory httpClientFactory)
+    public BaseSingleton (ILogger logger)
     {
         _logger = logger;
-        _httpClientFactory = httpClientFactory;
-
         _logger?.LogDebug("INIT");
     }
-
     public ILogger Logger => _logger;
 }
 
 
-public abstract class BaseProvider<TMetadata>
-(
+public abstract class BaseProvider<TMetadata>(
     ILogger logger,
     IHttpClientFactory httpClientFactory,
     IGraphQL graphQL
-) : BaseSingleton(logger, httpClientFactory)
+) : BaseSingleton(logger)
 
 where TMetadata : BaseMetadata
 {
-    protected readonly IGraphQL _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
+    protected readonly IGraphQL _graphql = graphQL;
+    protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
     public Task<HttpResponseMessage>
     GetImageResponse(string url, CancellationToken cancellationToken)
@@ -92,16 +86,6 @@ where TMetadata : BaseMetadata
         _logger.LogDebug("Fetch {kid}", kinopoiskId);
         var film = await FetchAsync(kinopoiskId, cancellationToken);
         return film ?? throw new System.Exception(
-            $"Get Kinopoisk metadata failed KID {kinopoiskId}");
-    }
-
-    protected abstract Task<TMetadata> GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken);
-    public async Task<TMetadata>
-    GetImages(int kinopoiskId, CancellationToken cancellationToken)
-    {
-        _logger.LogDebug("Get images {kid}", kinopoiskId);
-        var result = await GetImagesAsync(kinopoiskId, cancellationToken);
-        return result ?? throw new System.Exception(
             $"Get Kinopoisk metadata failed KID {kinopoiskId}");
     }
 }

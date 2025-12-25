@@ -29,8 +29,8 @@ class Program {
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         // serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
         // serviceCollection.AddSingleton<IRemoteImageProvider, PersonProvider>();
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieProvider>();
-        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonProvider>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
 
         var sp = serviceCollection.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true }
