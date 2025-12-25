@@ -20,18 +20,17 @@ using Interfaces;
 
 public abstract class MovieProvider
 (
-    ILogger<MovieProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) : BaseProvider<FilmInfo>(logger, httpClientFactory, graphQL)
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
+) : BaseProvider<FilmInfo>(loggerFactory, httpClientFactory)
 {
     protected override async Task<FilmInfo>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
     => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
 }
 
-public class MovieExternalId (ILogger<MovieExternalId> logger)
-: BaseSingleton(logger), IExternalIdProvider<Movie>
+public class MovieExternalId(ILoggerFactory loggerFactory)
+: BaseSingleton(loggerFactory), IExternalIdProvider<Movie>
 {
     public string ExternalIdPath => "film";
 }
@@ -39,10 +38,9 @@ public class MovieExternalId (ILogger<MovieExternalId> logger)
 
 public class MovieMetadataProvider
 (
-    ILogger<MovieMetadataProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) : MovieProvider(logger, httpClientFactory, graphQL),
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
+) : MovieProvider(loggerFactory, httpClientFactory),
     ISearchProvider<MovieInfo, FilmInfo>,
     IMetadataProvider<Movie, MovieInfo, FilmInfo>
 {
@@ -51,10 +49,9 @@ public class MovieMetadataProvider
 
 public class MovieImageProvider
 (
-    ILogger<MovieImageProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) : MovieProvider(logger, httpClientFactory, graphQL),
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
+) : MovieProvider(loggerFactory, httpClientFactory),
     IImageProvider<Movie, FilmInfo>
 {
     private readonly Dictionary<int, FilmInfo> _cache = [];

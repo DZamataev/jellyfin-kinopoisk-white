@@ -39,7 +39,6 @@ public class KinopoiskWhitePlugin : BasePlugin<KinopoiskWhitePlugin.Config>
         public void RegisterServices(IServiceCollection services, IServerApplicationHost applicationHost)
         {
             GraphQL.RegisterServices(services);
-            services.AddSingleton<IGraphQL, GraphQL>();
         }
     }
 }

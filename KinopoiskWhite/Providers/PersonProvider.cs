@@ -18,10 +18,9 @@ using Interfaces;
 
 public abstract class PersonProvider
 (
-    ILogger<PersonProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) : BaseProvider<FilmPerson>(logger, httpClientFactory, graphQL)
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
+) : BaseProvider<FilmPerson>(loggerFactory, httpClientFactory)
 {
     protected override async Task<FilmPerson>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
@@ -29,8 +28,8 @@ public abstract class PersonProvider
 }
 
 
-public class PersonExternalId (ILogger<PersonExternalId> logger)
-: BaseSingleton(logger), IExternalIdProvider<Person>
+public class PersonExternalId (ILoggerFactory loggerFactory)
+: BaseSingleton(loggerFactory), IExternalIdProvider<Person>
 {
     public string ExternalIdPath => "name";
 }
@@ -38,11 +37,10 @@ public class PersonExternalId (ILogger<PersonExternalId> logger)
 
 public class PersonMetadataProvider
 (
-    ILogger<PersonMetadataProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
 ) :
-    PersonProvider(logger, httpClientFactory, graphQL),
+    PersonProvider(loggerFactory, httpClientFactory),
     ISearchProvider<PersonLookupInfo, FilmPerson>,
     IMetadataProvider<Person, PersonLookupInfo, FilmPerson>
 {
@@ -52,11 +50,10 @@ public class PersonMetadataProvider
 
 public class PersonImageProvider
 (
-    ILogger<PersonImageProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
 ) :
-    PersonProvider(logger, httpClientFactory, graphQL),
+    PersonProvider(loggerFactory, httpClientFactory),
     IImageProvider<Person, FilmPerson>
 {
     private readonly Dictionary<int, FilmPerson> _cache = [];

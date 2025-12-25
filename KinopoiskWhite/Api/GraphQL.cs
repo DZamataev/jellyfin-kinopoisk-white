@@ -32,8 +32,8 @@ public class GraphQL : BaseSingleton, IGraphQL
     private readonly TaskQueue _queue;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GraphQL(ILogger<GraphQL> logger, IHttpClientFactory httpClientFactory)
-    : base(logger)
+    public GraphQL(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
+    : base(loggerFactory)
     {
         _queue = new TaskQueue();
 

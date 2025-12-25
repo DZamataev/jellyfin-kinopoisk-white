@@ -24,9 +24,9 @@ public abstract class Base {
 
 public abstract class BaseSingleton: Base {
     protected readonly ILogger _logger;
-    public BaseSingleton (ILogger logger)
+    public BaseSingleton (ILoggerFactory loggerFactory)
     {
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger(GetType());
         _logger?.LogDebug("INIT");
     }
     public ILogger Logger => _logger;
@@ -34,14 +34,15 @@ public abstract class BaseSingleton: Base {
 
 
 public abstract class BaseProvider<TMetadata>(
-    ILogger logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) : BaseSingleton(logger)
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory
+) : BaseSingleton(loggerFactory)
 
 where TMetadata : BaseMetadata
 {
-    protected readonly IGraphQL _graphql = graphQL;
+    private static IGraphQL __graphql = null;
+    protected readonly IGraphQL _graphql = __graphql ??= new GraphQL(loggerFactory, httpClientFactory);
+
     protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
     public Task<HttpResponseMessage>
