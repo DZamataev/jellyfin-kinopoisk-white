@@ -12,47 +12,37 @@ using MediaBrowser.Controller.Entities.Movies;
 
 namespace KinopoiskWhite.Providers;
 
-using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
 
 
-public abstract class MovieProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : BaseProvider<FilmInfo>(loggerFactory, httpClientFactory)
+public abstract class MovieProvider(ILoggerFactory logger, IHttpClientFactory http)
+: BaseProvider<FilmInfo>(logger, http)
 {
     protected override async Task<FilmInfo>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
     => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
 }
 
-public class MovieExternalId(ILoggerFactory loggerFactory)
-: BaseSingleton(loggerFactory), IExternalIdProvider<Movie>
+public class MovieExternalId(ILoggerFactory logger)
+: BaseSingleton(logger), IExternalIdProvider<Movie>
 {
     public string ExternalIdPath => "film";
 }
 
 
-public class MovieMetadataProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : MovieProvider(loggerFactory, httpClientFactory),
+public class MovieMetadataProvider(ILoggerFactory logger, IHttpClientFactory http)
+:
+    MovieProvider(logger, http),
     ISearchProvider<MovieInfo, FilmInfo>,
     IMetadataProvider<Movie, MovieInfo, FilmInfo>
 {
     public string GetSearchKeyword(MovieInfo info) => info.Path;
 }
 
-public class MovieImageProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : MovieProvider(loggerFactory, httpClientFactory),
-    IImageProvider<Movie, FilmInfo>
+public class MovieImageProvider(ILoggerFactory logger, IHttpClientFactory http)
+: MovieProvider(logger, http), IImageProvider<Movie, FilmInfo>
 {
     private readonly Dictionary<int, FilmInfo> _cache = [];
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [

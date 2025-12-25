@@ -11,8 +11,6 @@ using Api;
 using Common;
 using Api.Models;
 using Extensions;
-using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 public abstract class Base {
     #pragma warning disable CA1822 // Mark members as static

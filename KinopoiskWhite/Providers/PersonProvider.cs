@@ -11,16 +11,12 @@ using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers;
 
-using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
 
-public abstract class PersonProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : BaseProvider<FilmPerson>(loggerFactory, httpClientFactory)
+public abstract class PersonProvider(ILoggerFactory logger, IHttpClientFactory http)
+: BaseProvider<FilmPerson>(logger, http)
 {
     protected override async Task<FilmPerson>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
@@ -28,19 +24,16 @@ public abstract class PersonProvider
 }
 
 
-public class PersonExternalId (ILoggerFactory loggerFactory)
-: BaseSingleton(loggerFactory), IExternalIdProvider<Person>
+public class PersonExternalId (ILoggerFactory logger)
+: BaseSingleton(logger), IExternalIdProvider<Person>
 {
     public string ExternalIdPath => "name";
 }
 
 
-public class PersonMetadataProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) :
-    PersonProvider(loggerFactory, httpClientFactory),
+public class PersonMetadataProvider(ILoggerFactory logger, IHttpClientFactory http)
+:
+    PersonProvider(logger, http),
     ISearchProvider<PersonLookupInfo, FilmPerson>,
     IMetadataProvider<Person, PersonLookupInfo, FilmPerson>
 {
@@ -48,12 +41,9 @@ public class PersonMetadataProvider
 }
 
 
-public class PersonImageProvider
-(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) :
-    PersonProvider(loggerFactory, httpClientFactory),
+public class PersonImageProvider(ILoggerFactory logger, IHttpClientFactory http)
+:
+    PersonProvider(logger, http),
     IImageProvider<Person, FilmPerson>
 {
     private readonly Dictionary<int, FilmPerson> _cache = [];
