@@ -59,26 +59,20 @@ public class PersonImageProvider
     PersonProvider(logger, http, gql),
     IImageProvider<Person, FilmPerson>
 {
-    private readonly Dictionary<int, FilmPerson> _cache = [];
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [ImageType.Primary];
+
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public async Task<IEnumerable<RemoteImageInfo>>
     GetImages(BaseItem item, CancellationToken cancellationToken)
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        _logger.LogDebug("Getting images for {name}", item.Name);
+        var result = await WithCache(
+            $"images_{kid}",
+            async () => await _graphql.GetPerson(kid, cancellationToken)
+        );
 
-        if (_cache.TryGetValue(kid, out FilmPerson result))
-            _logger.LogDebug("Getting cached by {kid}", kid);
-
-        else
-        {
-            _logger.LogDebug("Get images {kid}", kid);
-            result = await _graphql.GetPerson(kid, cancellationToken).ConfigureAwait(false);
-            _cache[kid] = result ?? throw new System.Exception(
-                $"Get Kinopoisk metadata failed KID {kid}");
-        }
         return result.GetImages();
     }
 }

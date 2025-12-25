@@ -28,9 +28,9 @@ where TMetadata : BaseMetadata
 
         var kid = info.GetDefaultId();
 
-        result.FillFrom(await Fetch(kid, cancellationToken));
+        var metadata = await Fetch(kid, cancellationToken);
 
-        Logger.LogInformation("Metadata loaded for {item}", info.Name);
+        result.FillFrom(metadata ?? throw new System.Exception("Metadata is NULL"));
 
         return result;
     }

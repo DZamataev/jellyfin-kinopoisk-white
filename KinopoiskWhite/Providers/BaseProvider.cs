@@ -41,6 +41,8 @@ where TMetadata : BaseMetadata
 {
     protected readonly IGraphQL _graphql = graphQL;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private static readonly Dictionary<string, TMetadata> _cache = [];
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public Task<HttpResponseMessage>
     GetImageResponse(string url, CancellationToken cancellationToken)
@@ -80,10 +82,37 @@ where TMetadata : BaseMetadata
 
     protected abstract Task<TMetadata> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);
     public async Task<TMetadata> Fetch(int kinopoiskId, CancellationToken cancellationToken)
+    => await WithCache(
+        $"fetch_{kinopoiskId}",
+        async () => await FetchAsync(kinopoiskId, cancellationToken)
+    );
+
+    protected async Task<TMetadata> WithCache(string key, System.Func<Task<TMetadata>> task)
     {
-        _logger.LogDebug("Fetch {kid}", kinopoiskId);
-        var film = await FetchAsync(kinopoiskId, cancellationToken);
-        return film ?? throw new System.Exception(
-            $"Get Kinopoisk metadata failed KID {kinopoiskId}");
+        await _semaphore.WaitAsync();
+
+        try
+        {
+            if (_cache.TryGetValue(key, out TMetadata cached))
+            {
+                _logger.LogDebug("Getting cached by {key}", key);
+                return cached;
+            }
+            _logger.LogDebug("Getting remote by {key}", key);
+
+            var result = await task();
+
+            _cache[key] = result ??
+                throw new System.Exception($"Getting remote failed by {key}");
+
+            return result;
+        }
+        catch
+        {
+            throw;
+        }
+        finally {
+            _semaphore.Release();
+        }
     }
 }

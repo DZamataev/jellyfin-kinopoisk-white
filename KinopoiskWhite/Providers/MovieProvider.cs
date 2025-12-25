@@ -58,7 +58,6 @@ public class MovieImageProvider
     MovieProvider(logger, http, gql),
     IImageProvider<Movie, FilmInfo>
 {
-    private readonly Dictionary<int, FilmInfo> _cache = [];
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [
         ImageType.Primary,
         ImageType.Backdrop
@@ -69,25 +68,24 @@ public class MovieImageProvider
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        if (_cache.TryGetValue(kid, out FilmInfo result))
-            _logger.LogDebug("Getting cached by {kid}", kid);
-
-        else
-        {
-            if (item.TryGetContentId(out string cid)) {
+        var result = await WithCache($"images_{kid}", async () => {
+            await _graphql.GetPerson(kid, cancellationToken);
+            FilmInfo metadata = null;
+            if (item.TryGetContentId(out string cid))
+            {
                 _logger.LogDebug("Fetch by content id {cid}", cid);
-;
-                _cache[kid] = await _graphql.FilmPage(cid, cancellationToken)
+                ;
+                metadata = await _graphql.FilmPage(cid, cancellationToken)
                     .ConfigureAwait(false);
             }
+            var result = await GetImagesById(kid, cancellationToken).ConfigureAwait(false);
+            if (metadata != null)
+            {
+                result = metadata with { Images = result.Images }; 
+            }
+            return result;
+        });
 
-            result = await GetImagesById(kid, cancellationToken).ConfigureAwait(false);
-
-            if (_cache.TryGetValue(kid, out FilmInfo _))
-                result = _cache[kid] with { Images = result.Images };
-
-            _cache[kid] = result;
-        }
         return result.GetImages();
     }
 
