@@ -3,14 +3,16 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KinopoiskWhite.Api;
 
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Common;
 using Models;
+using Providers;
 
 public interface IGraphQL
 {
@@ -35,20 +37,8 @@ public class GraphQL : BaseSingleton, IGraphQL
     {
         _queue = new TaskQueue();
 
-        if (httpClientFactory == null)
-            _client = new HttpClient();
-        else
-            _client = httpClientFactory.CreateClient();
-
-        _client.DefaultRequestHeaders.Add("service-id", "25");
-
-        _apiClient = new HttpClient(new HttpClientHandler()
-        {
-            AutomaticDecompression = System.Net.DecompressionMethods.GZip |
-                                     System.Net.DecompressionMethods.Deflate
-        });
-        _apiClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
-        _apiClient.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        _client = httpClientFactory.CreateClient("GqlClient");
+        _apiClient = httpClientFactory.CreateClient("ApiClient");
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -56,7 +46,26 @@ public class GraphQL : BaseSingleton, IGraphQL
         };
     }
 
-    private static string GetEmbeddedQuery(string fileName)
+    public static void RegisterServices(IServiceCollection services)
+    {
+        services.AddHttpClient("GqlClient", client =>
+        {
+            client.DefaultRequestHeaders.Add("service-id", "25");
+        });
+
+        services.AddHttpClient("ApiClient", client =>
+        {
+            client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                        System.Net.DecompressionMethods.Deflate
+            });
+    }
+
+    protected static string GetEmbeddedQuery(string fileName)
     {
         var assembly = typeof(GraphQL).Assembly;
         var resourceName = $"KinopoiskWhite.Api.Queries.{fileName}.gql";
@@ -68,7 +77,27 @@ public class GraphQL : BaseSingleton, IGraphQL
         return reader.ReadToEnd();
     }
 
-    private async Task<JsonDocument> CallApi(string method, CancellationToken cancellationToken)
+    protected static async Task<JsonElement> Parse(HttpResponseMessage response,
+                                                   CancellationToken cancellationToken)
+    {
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(result))
+            throw new System.Exception("Document is null");
+
+        try
+        {
+            return JsonDocument.Parse(result).RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            throw new System.Exception("Invalid document");
+        }
+    }
+
+    protected async Task<JsonElement> CallApi(string method, CancellationToken cancellationToken)
     {
         var url = $"https://www.kinopoisk.ru/api/{method}";
         _logger.LogTrace("{url}", url);
@@ -80,19 +109,10 @@ public class GraphQL : BaseSingleton, IGraphQL
             return await _apiClient.GetAsync(url, cancellationToken);
         }).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        var doc = JsonDocument.Parse(result);
-
-        if (doc.RootElement.ValueKind == JsonValueKind.Null)
-            throw new System.Exception("Document is null");
-
-        return doc;
+        return await Parse(response, cancellationToken);
     }
 
-    private async Task<JsonElement> Call(string operationName, object variables, CancellationToken cancellationToken)
+    protected async Task<JsonElement> Call(string operationName, object variables, CancellationToken cancellationToken)
     {
         var url = "https://graphql.kinopoisk.ru/graphql";
         var query = GetEmbeddedQuery(operationName);
@@ -109,19 +129,10 @@ public class GraphQL : BaseSingleton, IGraphQL
             return await _client.PostAsync(url, data, cancellationToken);
         }).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
-
-        var result = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        using var doc = JsonDocument.Parse(result);
-
-        if (doc.RootElement.ValueKind == JsonValueKind.Null)
-            throw new System.Exception("Document is null");
-
-        return doc.RootElement.Clone();
+        return await Parse(response, cancellationToken);
     }
 
-    private static JsonElement Walk(JsonElement root, string path)
+    protected static JsonElement Walk(JsonElement root, string path)
     {
         foreach (var chunk in path.Split('.'))
             root = root.GetProperty(chunk);
@@ -129,7 +140,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         return root;
     }
 
-    private async Task<JsonElement> Call(
+    protected async Task<JsonElement> Call(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
@@ -139,7 +150,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         return Walk(root, path);
     }
 
-    private async Task<FilmInfo> CallAndDeserialize(
+    protected async Task<FilmInfo> CallAndDeserialize(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
