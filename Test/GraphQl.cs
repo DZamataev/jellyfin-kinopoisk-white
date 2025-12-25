@@ -85,7 +85,7 @@ public class GraphQlTests {
 
         var services = new ServiceCollection();
         services.AddSingleton<IHttpClientFactory>(factoryMock.Object);
-        MockGraphQL.RegisterServices(services);
+        // MockGraphQL.RegisterServices(services);
         var sp = services.BuildServiceProvider();
 
         graphql = new MockGraphQL(

@@ -12,13 +12,17 @@ using MediaBrowser.Controller.Entities.Movies;
 
 namespace KinopoiskWhite.Providers;
 
+using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
 
-
-public abstract class MovieProvider(ILoggerFactory logger, IHttpClientFactory http)
-: BaseProvider<FilmInfo>(logger, http)
+public abstract class MovieProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) : BaseProvider<FilmInfo>(logger, http, gql)
 {
     protected override async Task<FilmInfo>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
@@ -32,17 +36,27 @@ public class MovieExternalId(ILoggerFactory logger)
 }
 
 
-public class MovieMetadataProvider(ILoggerFactory logger, IHttpClientFactory http)
-:
-    MovieProvider(logger, http),
+public class MovieMetadataProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    MovieProvider(logger, http, gql),
     ISearchProvider<MovieInfo, FilmInfo>,
     IMetadataProvider<Movie, MovieInfo, FilmInfo>
 {
     public string GetSearchKeyword(MovieInfo info) => info.Path;
 }
 
-public class MovieImageProvider(ILoggerFactory logger, IHttpClientFactory http)
-: MovieProvider(logger, http), IImageProvider<Movie, FilmInfo>
+public class MovieImageProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    MovieProvider(logger, http, gql),
+    IImageProvider<Movie, FilmInfo>
 {
     private readonly Dictionary<int, FilmInfo> _cache = [];
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [

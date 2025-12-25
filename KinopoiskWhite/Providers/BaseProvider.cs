@@ -24,7 +24,7 @@ public abstract class BaseSingleton: Base {
     protected readonly ILogger _logger;
     public BaseSingleton (ILoggerFactory loggerFactory)
     {
-        _logger = loggerFactory.CreateLogger(GetType());
+        _logger = loggerFactory?.CreateLogger(GetType());
         _logger?.LogDebug("INIT");
     }
     public ILogger Logger => _logger;
@@ -33,15 +33,14 @@ public abstract class BaseSingleton: Base {
 
 public abstract class BaseProvider<TMetadata>(
     ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    IGraphQL graphQL
 ) : BaseSingleton(loggerFactory)
 
 where TMetadata : BaseMetadata
 {
-    private static IGraphQL __graphql = null;
-    protected readonly IGraphQL _graphql = __graphql ??= new GraphQL(loggerFactory, httpClientFactory);
-
-    protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    protected readonly IGraphQL _graphql = graphQL;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
 
     public Task<HttpResponseMessage>
     GetImageResponse(string url, CancellationToken cancellationToken)

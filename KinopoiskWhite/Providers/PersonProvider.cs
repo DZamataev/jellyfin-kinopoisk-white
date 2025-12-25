@@ -11,12 +11,17 @@ using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers;
 
+using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
 
-public abstract class PersonProvider(ILoggerFactory logger, IHttpClientFactory http)
-: BaseProvider<FilmPerson>(logger, http)
+public abstract class PersonProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) : BaseProvider<FilmPerson>(logger, http, gql)
 {
     protected override async Task<FilmPerson>
     FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
@@ -31,9 +36,13 @@ public class PersonExternalId (ILoggerFactory logger)
 }
 
 
-public class PersonMetadataProvider(ILoggerFactory logger, IHttpClientFactory http)
-:
-    PersonProvider(logger, http),
+public class PersonMetadataProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    PersonProvider(logger, http, gql),
     ISearchProvider<PersonLookupInfo, FilmPerson>,
     IMetadataProvider<Person, PersonLookupInfo, FilmPerson>
 {
@@ -41,9 +50,13 @@ public class PersonMetadataProvider(ILoggerFactory logger, IHttpClientFactory ht
 }
 
 
-public class PersonImageProvider(ILoggerFactory logger, IHttpClientFactory http)
-:
-    PersonProvider(logger, http),
+public class PersonImageProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    PersonProvider(logger, http, gql),
     IImageProvider<Person, FilmPerson>
 {
     private readonly Dictionary<int, FilmPerson> _cache = [];
