@@ -7,7 +7,8 @@ using KinopoiskWhite.Providers;
 using KinopoiskWhite.Extensions;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
-using KinopoiskWhite.Api.Models;
+using MediaBrowser.Model.Entities;
+using KinopoiskWhite.Common;
 
 namespace App; 
 
@@ -37,7 +38,7 @@ class Program {
         );
 
         // _apiMovies = sp.GetRequiredService<IApiService<FilmInfo>>();
-        _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
+        // _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
         _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();
 
@@ -73,22 +74,22 @@ class Program {
         // foreach (var image in images)
         //     Console.WriteLine($"{image}");
 
-        var item = new PersonLookupInfo();
-        item.SetDefaultId(419797);
-        // item.Name = "арата иура";
-        var result = await _personProvider.GetMetadata(item, _token);
-        Console.WriteLine($"{result.Item.Name}");
+        // var item = new PersonLookupInfo();
+        // item.SetDefaultId(419797);
+        // // item.Name = "арата иура";
+        // var result = await _personProvider.GetMetadata(item, _token);
+        // Console.WriteLine($"{result.Item.Name}");
         // var images = await _imageProvider.GetImages(item, _token);
         // foreach (var image in images)
         //     Console.WriteLine($"{image.Url}");
 
-        // var item = new MovieInfo();
+        var item = new MovieInfo();
+        item.SetProviderId(Constants.ProviderId, "361aaa");
         // item.SetDefaultId(361);
         // item.Name = "fight club";
         // item.Year = 1999;
-        // var results = await _movieProvider.GetSearchResults(item, _token);
-        // foreach (var result in results)
-        //     Console.WriteLine($"{result}");
+        var result = await _movieProvider.GetMetadata(item, _token);
+        Console.WriteLine($"{result.Item.Name}");
 
         // var person = await _api.GetPerson(25774, _token);
         // Console.WriteLine($"{person}");
