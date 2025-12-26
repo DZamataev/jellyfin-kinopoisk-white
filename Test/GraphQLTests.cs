@@ -11,39 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Moq.Protected;
 
-using KinopoiskWhite.Api;
 using KinopoiskWhite.Api.Models;
 
-namespace Test; 
-
-
-class MockGraphQL(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : GraphQL(loggerFactory, httpClientFactory)
-{
-    public static string MockGetEmbeddedQuery(string fileName)
-    => GetEmbeddedQuery(fileName);
-
-    public async Task<JsonElement> MockCall(string operationName, object variables,
-                                            CancellationToken cancellationToken)
-    => await Call(operationName, variables, cancellationToken);
-
-    public async Task<JsonElement> MockCallApi(string method, CancellationToken cancellationToken)
-    => await CallApi(method, cancellationToken);
-
-    public static JsonElement MockWalk(JsonElement root, string path) => Walk(root, path);
-
-    public async Task<JsonElement> MockCall(string operationName, object variables, string path,
-                                            CancellationToken cancellationToken)
-    => await Call(operationName, variables, path, cancellationToken);
-
-    public async Task<FilmInfo> MockCallAndDeserialize(
-        string operationName, object variables, string path,
-        CancellationToken cancellationToken)
-    => await CallAndDeserialize(operationName, variables, path, cancellationToken);
-}
-
+namespace Test;
+using Common;
 
 public class GraphQlTests {
     private readonly MockGraphQL graphql;
@@ -259,17 +230,3 @@ public class GraphQlTests {
         Assert.Equal(origPerson.Name, person.Name);
     }
 }
-
-/*
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton<IHttpClientFactory>(_clientFactoryMock.Object);
-
-        var sp = services.BuildServiceProvider();
-        graphql = sp.GetRequiredService<IGraphQL>();
-
-        _api = new ApiServiceMovie(
-            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiServiceMovie>()
-        );
-*/
