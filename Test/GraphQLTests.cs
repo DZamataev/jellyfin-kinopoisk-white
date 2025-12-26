@@ -15,6 +15,7 @@ using KinopoiskWhite.Api.Models;
 
 namespace Test;
 using Common;
+using KinopoiskWhite.Api;
 
 public class GraphQlTests {
     private readonly MockGraphQL graphql;
@@ -105,10 +106,9 @@ public class GraphQlTests {
     {
         response.Content = null;
 
-        var ex = await Assert.ThrowsAsync<System.Exception>(async () =>
+        await Assert.ThrowsAsync<GraphQL.Error.DocumentIsNull>(async () =>
             await graphql.MockCallApi("test", token)
         );
-        Assert.Equal("Document is null", ex.Message);
     }
 
     [Fact]
@@ -116,10 +116,9 @@ public class GraphQlTests {
     {
         response.Content = new StringContent("NOT JSON");
 
-        var ex = await Assert.ThrowsAsync<System.Exception>(async () =>
+        await Assert.ThrowsAsync<GraphQL.Error.DocumentInvalid>(async () =>
             await graphql.MockCallApi("test", token)
         );
-        Assert.Equal("Invalid document", ex.Message);
     }
 
     [Fact]

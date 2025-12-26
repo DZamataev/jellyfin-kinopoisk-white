@@ -10,7 +10,6 @@ using Api.Models;
 using Common;
 using Extensions;
 
-
 public interface IMetadataProvider<TItemType, TLookupInfoType, TMetadata>
 : IRemoteMetadataProvider<TItemType, TLookupInfoType>
 
@@ -35,9 +34,10 @@ where TMetadata : BaseMetadata
 
             result.FillFrom(metadata ?? throw new System.Exception("Metadata is NULL"));
         }
-        catch (System.Exception ex)
+        catch (Base.Error ex)
         {
             Logger.LogError("{message}", ex.Message);
+            return null;
         }
         return result;
     }

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,28 +6,23 @@ using System.Collections.Generic;
 
 namespace Test.Common;
 
-using Response = System.Func<HttpRequestMessage, HttpResponseMessage>;
-
-class MockHttpClientFactory(HttpMessageHandler handler, IHttpMessageHandlerFactory factory)
+class MockHttpClientFactory(HttpMessageHandler handler)
 : IHttpClientFactory
 {
     readonly HttpMessageHandler _handler = handler;
-    readonly IHttpMessageHandlerFactory _factory = factory;
 
-    public HttpClient CreateClient(string name = null)
-    => new(_handler);
-    public HttpMessageHandler CreateHandler(string name)
-    => _factory?.CreateHandler(name) ?? _handler;
+    public HttpClient CreateClient(string name = null) => new(_handler);
+    public HttpMessageHandler CreateHandler(string name) => _handler;
 
-    class MessageHandler(Response[] responses)
+    public class MessageHandler()
     : HttpMessageHandler
     {
-        readonly Stack<Response> _responses = new(responses.Reverse());
+        public Stack<System.Func<HttpRequestMessage, HttpResponseMessage>> Responses = new();
 
         protected override Task<HttpResponseMessage>
         SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (_responses.TryPop(out var response))
+            if (Responses.TryPop(out var response))
                 return Task.FromResult(response(request));
 
             return Task.FromResult(new HttpResponseMessage{ StatusCode = HttpStatusCode.NotFound });
