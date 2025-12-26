@@ -76,9 +76,14 @@ public class MovieImageProvider
             {
                 _logger.LogDebug("Fetch by content id {cid}", cid);
                 ;
+                try
+                {
                 metadata = await _graphql.FilmPage(cid, cancellationToken)
                     .ConfigureAwait(false);
-            } else
+                }
+                catch (Base.Error) {}
+            }
+            else
             {
                 metadata = await _graphql.FilmBaseInfo(kid, cancellationToken)
                     .ConfigureAwait(false);
