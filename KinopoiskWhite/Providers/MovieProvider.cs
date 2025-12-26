@@ -17,21 +17,47 @@ using Api.Models;
 using Extensions;
 using Interfaces;
 
-
-public class MovieProvider
+public abstract class MovieProvider
 (
-    ILogger<MovieProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) :
-    BaseProvider<FilmInfo>(logger, httpClientFactory, graphQL),
-    ISearchProvider<MovieInfo, FilmInfo>,
-    IMetadataProvider<Movie, MovieInfo, FilmInfo>,
-    IRemoteMetadataProvider<Movie, MovieInfo>,
-    IImageProvider<Movie>
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) : BaseProvider<FilmInfo>(logger, http, gql)
 {
-    private readonly Dictionary<int, FilmInfo> _cache = [];
+    protected override async Task<FilmInfo>
+    FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
+    => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
+}
+
+public class MovieExternalId(ILoggerFactory logger)
+: BaseSingleton(logger), IExternalIdProvider<Movie>
+{
+    public string ExternalIdPath => "film";
+}
+
+
+public class MovieMetadataProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    MovieProvider(logger, http, gql),
+    ISearchProvider<MovieInfo, FilmInfo>,
+    IMetadataProvider<Movie, MovieInfo, FilmInfo>
+{
     public string GetSearchKeyword(MovieInfo info) => info.Path;
+}
+
+public class MovieImageProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    MovieProvider(logger, http, gql),
+    IImageProvider<Movie, FilmInfo>
+{
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [
         ImageType.Primary,
         ImageType.Backdrop
@@ -42,34 +68,29 @@ public class MovieProvider
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        if (_cache.TryGetValue(kid, out FilmInfo result))
-            _logger.LogDebug("Getting cached by {kid}", kid);
-
-        else
-        {
-            if (item.TryGetContentId(out string cid)) {
+        var result = await WithCache($"images_{kid}", async () => {
+            await _graphql.GetPerson(kid, cancellationToken);
+            FilmInfo metadata = null;
+            if (item.TryGetContentId(out string cid))
+            {
                 _logger.LogDebug("Fetch by content id {cid}", cid);
-;
-                _cache[kid] = await _graphql.FilmPage(cid, cancellationToken)
+                ;
+                metadata = await _graphql.FilmPage(cid, cancellationToken)
                     .ConfigureAwait(false);
             }
+            var result = await GetImagesById(kid, cancellationToken).ConfigureAwait(false);
+            if (metadata != null)
+            {
+                result = metadata with { Images = result.Images }; 
+            }
+            return result;
+        });
 
-            result = await GetImages(kid, cancellationToken).ConfigureAwait(false);
-
-            if (_cache.TryGetValue(kid, out FilmInfo _))
-                result = _cache[kid] with { Images = result.Images };
-
-            _cache[kid] = result;
-        }
         return result.GetImages();
     }
 
-    protected override async Task<FilmInfo>
-    FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
-    => await _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
-
-    protected override async Task<FilmInfo>
-    GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken)
+    protected async Task<FilmInfo>
+    GetImagesById(int kinopoiskId, CancellationToken cancellationToken)
     {
         FilmInfo result = null;
         var resultCounter = "";

@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Plugins;
+
 namespace KinopoiskWhite.Api;
 
 using Common;
@@ -32,8 +35,32 @@ public class GraphQL : BaseSingleton, IGraphQL
     private readonly TaskQueue _queue;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public GraphQL(ILogger<GraphQL> logger, IHttpClientFactory httpClientFactory)
-    : base(logger, httpClientFactory)
+    public class Registrator : IPluginServiceRegistrator
+    {
+        public void RegisterServices(IServiceCollection services, IServerApplicationHost applicationHost)
+        {
+            services.AddHttpClient("GqlClient", client =>
+            {
+                client.DefaultRequestHeaders.Add("service-id", "25");
+            });
+
+            services.AddHttpClient("ApiClient", client =>
+            {
+                client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
+                client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+                {
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                                            System.Net.DecompressionMethods.Deflate
+                });
+
+            services.AddSingleton<IGraphQL, GraphQL>();
+        }
+    }
+
+    public GraphQL(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory)
+    : base(loggerFactory)
     {
         _queue = new TaskQueue();
 
@@ -44,25 +71,6 @@ public class GraphQL : BaseSingleton, IGraphQL
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
-    }
-
-    public static void RegisterServices(IServiceCollection services)
-    {
-        services.AddHttpClient("GqlClient", client =>
-        {
-            client.DefaultRequestHeaders.Add("service-id", "25");
-        });
-
-        services.AddHttpClient("ApiClient", client =>
-        {
-            client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate");
-            client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-        })
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
-            {
-                AutomaticDecompression = System.Net.DecompressionMethods.GZip |
-                                        System.Net.DecompressionMethods.Deflate
-            });
     }
 
     protected static string GetEmbeddedQuery(string fileName)

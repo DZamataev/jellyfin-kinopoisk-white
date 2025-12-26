@@ -12,7 +12,6 @@ using Common;
 using Api.Models;
 using Extensions;
 
-
 public abstract class Base {
     #pragma warning disable CA1822 // Mark members as static
     public string Name => Constants.ProviderName;
@@ -23,32 +22,27 @@ public abstract class Base {
 
 public abstract class BaseSingleton: Base {
     protected readonly ILogger _logger;
-    protected readonly IHttpClientFactory _httpClientFactory;
-
-    protected BaseSingleton (
-        ILogger logger,
-        IHttpClientFactory httpClientFactory)
+    public BaseSingleton (ILoggerFactory loggerFactory)
     {
-        _logger = logger;
-        _httpClientFactory = httpClientFactory;
-
+        _logger = loggerFactory?.CreateLogger(GetType());
         _logger?.LogDebug("INIT");
     }
-
     public ILogger Logger => _logger;
 }
 
 
-public abstract class BaseProvider<TMetadata>
-(
-    ILogger logger,
+public abstract class BaseProvider<TMetadata>(
+    ILoggerFactory loggerFactory,
     IHttpClientFactory httpClientFactory,
     IGraphQL graphQL
-) : BaseSingleton(logger, httpClientFactory)
+) : BaseSingleton(loggerFactory)
 
 where TMetadata : BaseMetadata
 {
-    protected readonly IGraphQL _graphql = graphQL ?? new GraphQL(null, httpClientFactory);
+    protected readonly IGraphQL _graphql = graphQL;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    private static readonly Dictionary<string, TMetadata> _cache = [];
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public Task<HttpResponseMessage>
     GetImageResponse(string url, CancellationToken cancellationToken)
@@ -83,25 +77,42 @@ where TMetadata : BaseMetadata
         await foreach (var item in GetSearchResults(path, cancellationToken))
             return item;
 
-        throw new System.Exception($"Get Kinopoisk Id failed [{path}]");
+        throw new System.Exception($"Get Kinopoisk Id failed [{path ?? "NULL"}]");
     }
 
     protected abstract Task<TMetadata> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);
     public async Task<TMetadata> Fetch(int kinopoiskId, CancellationToken cancellationToken)
-    {
-        _logger.LogDebug("Fetch {kid}", kinopoiskId);
-        var film = await FetchAsync(kinopoiskId, cancellationToken);
-        return film ?? throw new System.Exception(
-            $"Get Kinopoisk metadata failed KID {kinopoiskId}");
-    }
+    => await WithCache(
+        $"fetch_{kinopoiskId}",
+        async () => await FetchAsync(kinopoiskId, cancellationToken)
+    );
 
-    protected abstract Task<TMetadata> GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken);
-    public async Task<TMetadata>
-    GetImages(int kinopoiskId, CancellationToken cancellationToken)
+    protected async Task<TMetadata> WithCache(string key, System.Func<Task<TMetadata>> task)
     {
-        _logger.LogDebug("Get images {kid}", kinopoiskId);
-        var result = await GetImagesAsync(kinopoiskId, cancellationToken);
-        return result ?? throw new System.Exception(
-            $"Get Kinopoisk metadata failed KID {kinopoiskId}");
+        await _semaphore.WaitAsync();
+
+        try
+        {
+            if (_cache.TryGetValue(key, out TMetadata cached))
+            {
+                _logger.LogDebug("Getting cached by {key}", key);
+                return cached;
+            }
+            _logger.LogDebug("Getting remote by {key}", key);
+
+            var result = await task();
+
+            _cache[key] = result ??
+                throw new System.Exception($"Getting remote failed by {key}");
+
+            return result;
+        }
+        catch
+        {
+            throw;
+        }
+        finally {
+            _semaphore.Release();
+        }
     }
 }

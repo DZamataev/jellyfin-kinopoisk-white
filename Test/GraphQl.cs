@@ -18,9 +18,9 @@ namespace Test;
 
 
 class MockGraphQL(
-    ILogger<MockGraphQL> logger,
+    ILoggerFactory loggerFactory,
     IHttpClientFactory httpClientFactory
-) : GraphQL(logger, httpClientFactory)
+) : GraphQL(loggerFactory, httpClientFactory)
 {
     public static string MockGetEmbeddedQuery(string fileName)
     => GetEmbeddedQuery(fileName);
@@ -85,11 +85,11 @@ public class GraphQlTests {
 
         var services = new ServiceCollection();
         services.AddSingleton<IHttpClientFactory>(factoryMock.Object);
-        MockGraphQL.RegisterServices(services);
+        // MockGraphQL.RegisterServices(services);
         var sp = services.BuildServiceProvider();
 
         graphql = new MockGraphQL(
-            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<MockGraphQL>(),
+            new LoggerFactory(),
             sp.GetRequiredService<IHttpClientFactory>()
         );
     }

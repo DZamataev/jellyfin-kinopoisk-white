@@ -18,43 +18,61 @@ using Interfaces;
 
 public abstract class PersonProvider
 (
-    ILogger<PersonProvider> logger,
-    IHttpClientFactory httpClientFactory,
-    IGraphQL graphQL
-) :
-    BaseProvider<FilmPerson>(logger, httpClientFactory, graphQL),
-    ISearchProvider<PersonLookupInfo, FilmPerson>,
-    IMetadataProvider<Person, PersonLookupInfo, FilmPerson>,
-    IImageProvider<Person>
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) : BaseProvider<FilmPerson>(logger, http, gql)
 {
-    private readonly Dictionary<int, FilmPerson> _cache = [];
-    public bool Supports(BaseItem item) => item is Person;
+    protected override async Task<FilmPerson>
+    FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
+    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
+}
+
+
+public class PersonExternalId (ILoggerFactory logger)
+: BaseSingleton(logger), IExternalIdProvider<Person>
+{
+    public string ExternalIdPath => "name";
+}
+
+
+public class PersonMetadataProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    PersonProvider(logger, http, gql),
+    ISearchProvider<PersonLookupInfo, FilmPerson>,
+    IMetadataProvider<Person, PersonLookupInfo, FilmPerson>
+{
     public string GetSearchKeyword(PersonLookupInfo info) => info.Name;
+}
+
+
+public class PersonImageProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    PersonProvider(logger, http, gql),
+    IImageProvider<Person, FilmPerson>
+{
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [ImageType.Primary];
+
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public async Task<IEnumerable<RemoteImageInfo>>
     GetImages(BaseItem item, CancellationToken cancellationToken)
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        _logger.LogDebug("Getting images for {name}", item.Name);
+        var result = await WithCache(
+            $"images_{kid}",
+            async () => await _graphql.GetPerson(kid, cancellationToken)
+        );
 
-        if (_cache.TryGetValue(kid, out FilmPerson result))
-            _logger.LogDebug("Getting cached by {kid}", kid);
-
-        else
-        {
-            result = await GetImages(kid, cancellationToken).ConfigureAwait(false);
-            _cache[kid] = result;
-        }
         return result.GetImages();
     }
-
-    protected override async Task<FilmPerson>
-    FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
-    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
-
-    protected override async Task<FilmPerson>
-    GetImagesAsync(int kinopoiskId, CancellationToken cancellationToken)
-    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
 }
