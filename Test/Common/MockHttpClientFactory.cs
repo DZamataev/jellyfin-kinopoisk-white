@@ -17,14 +17,14 @@ public class MockHttpClientFactory: Mock<IHttpClientFactory>
         Setup(f => f.CreateClient(It.IsAny<string>())).Returns(HttpClient);
     }
 
-    public static void SetResponses(HttpResponseMessage[] responses)
+    public void SetResponses(HttpResponseMessage[] responses)
     {
         Responses.Clear();
         foreach (var response in responses.Reverse())
             Responses.Push(response);
     }
 
-    static readonly Stack<HttpResponseMessage> Responses = new();
+    readonly Stack<HttpResponseMessage> Responses = new();
     HttpClient HttpClient {
         get {
             var handler = new Mock<HttpMessageHandler>();

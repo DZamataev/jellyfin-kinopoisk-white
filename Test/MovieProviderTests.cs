@@ -46,10 +46,6 @@ class MockMovieImageProvider(
     IGraphQL gql
 ) : MovieImageProvider(logger, http, gql);
 
-// [CollectionDefinition("Sequential", DisableParallelization = true)]
-// public class SequentialCollection { }
-
-// [Collection("Sequential")]
 public class MovieProviderTests
 {
     readonly MockMovieMetadataProvider metadataProvider;
@@ -66,10 +62,11 @@ public class MovieProviderTests
         imageProvider = new MockMovieImageProvider(logger, httpFactory.Object, graphql);
     }
 
-    readonly FilmInfo OrigFilmInfo = new()
+    static int Kid = 100;
+    static FilmInfo OrigFilmInfo => new()
     {
-        Id = 123,
-        ContentId = "123abc",
+        Id = Kid,
+        ContentId = $"{Kid++}abc",
         Title = new()
         {
             Russian = "Тест",
@@ -81,7 +78,7 @@ public class MovieProviderTests
         },
         ProductionYear = 1985,
     };
-    FilmInfo OrigFilmInfoWithGallery => OrigFilmInfo with
+    static FilmInfo OrigFilmInfoWithGallery => OrigFilmInfo with
     {
         Gallery = new()
         {
@@ -90,7 +87,7 @@ public class MovieProviderTests
         }
     };
 
-    FilmInfo OrigFilmInfoWithImages => OrigFilmInfo with
+    static FilmInfo OrigFilmInfoWithImages => OrigFilmInfo with
     {
         Images = new()
         {
@@ -133,17 +130,18 @@ public class MovieProviderTests
 
     [Fact] public async Task ShouldGetResultItemById()
     {
-        MockHttpClientFactory.SetResponses([ FilmInfoResponse(OrigFilmInfo) ]);
+        var info = OrigFilmInfo;
+        httpFactory.SetResponses([ FilmInfoResponse(info) ]);
         var item = new MovieInfo();
-        item.SetDefaultId(OrigFilmInfo.Id);
+        item.SetDefaultId(info.Id);
         var result = await metadataProvider.MockGetMetadata(item, token);
 
-        Assert.Equal(OrigFilmInfo.Title.Russian, result?.Item?.Name);
+        Assert.Equal(info.Title.Russian, result?.Item?.Name);
     }
 
     [Fact] public async Task ShouldThrowByIncorrectId()
     {
-        MockHttpClientFactory.SetResponses([]);
+        httpFactory.SetResponses([]);
         var item = new MovieInfo();
         item.SetProviderId(Constants.ProviderId, "123abc");
         await Assert.ThrowsAsync<BaseProvider<FilmInfo>.Error.EmptySearchString>(async () =>
@@ -153,28 +151,31 @@ public class MovieProviderTests
 
     [Fact] public async Task ShouldThrowByUnknownId()
     {
-        MockHttpClientFactory.SetResponses([ FilmInfoResponse(null) ]);
+        var info = OrigFilmInfo;
+        httpFactory.SetResponses([ FilmInfoResponse(null) ]);
         await Assert.ThrowsAsync<GraphQL.Error.ElementIsNull>(async () =>
-            await metadataProvider.Fetch(OrigFilmInfo.Id, token)
+            await metadataProvider.Fetch(info.Id, token)
         );
 
     }
 
     [Fact] public async Task ShouldGetIdByKeyword()
     {
-        MockHttpClientFactory.SetResponses([ SuggestSearchResponse(OrigFilmInfo) ]);
+        var info = OrigFilmInfo;
+        httpFactory.SetResponses([ SuggestSearchResponse(info) ]);
         MovieInfo item = new() { Path = "some path" };
         var result = await metadataProvider.MockResolveInfo(item, token);
 
-        Assert.Equal(OrigFilmInfo.Title.Russian, result?.Item?.Name);
+        Assert.Equal(info.Title.Russian, result?.Item?.Name);
     }
 
     [Fact]
     public async Task ShouldGetImagesByKid()
     {
-        MockHttpClientFactory.SetResponses([ FilmInfoResponse(OrigFilmInfo) ]);
+        var info = OrigFilmInfo;
+        httpFactory.SetResponses([ FilmInfoResponse(info) ]);
         var item = new Movie();
-        item.SetDefaultId(OrigFilmInfo.Id);
+        item.SetDefaultId(info.Id);
 
         var results = await imageProvider.GetImages(item, token);
 
@@ -192,13 +193,14 @@ public class MovieProviderTests
         Assert.Empty(expected);
     }
 
-    [Fact(Skip = "http client issue")]
+    [Fact]
     public async Task ShouldGetImagesByContentId()
     {
-        MockHttpClientFactory.SetResponses([ FilmPageResponse(OrigFilmInfoWithGallery) ]);
+        var info = OrigFilmInfoWithGallery;
+        httpFactory.SetResponses([ FilmPageResponse(info) ]);
         var item = new Movie();
-        item.SetDefaultId(OrigFilmInfo.Id);
-        item.SetContentId(OrigFilmInfo.ContentId);
+        item.SetDefaultId(info.Id);
+        item.SetContentId(info.ContentId);
 
         var results = await imageProvider.GetImages(item, token);
 
@@ -217,15 +219,16 @@ public class MovieProviderTests
         Assert.Empty(expected);
     }
 
-    [Fact(Skip = "http client issue")]
+    [Fact]
     public async Task ShouldGetImagesWithoutContentId()
     {
-        MockHttpClientFactory.SetResponses([
-            FilmInfoResponse(OrigFilmInfo),
+        var info = OrigFilmInfo;
+        httpFactory.SetResponses([
+            FilmInfoResponse(info),
             MovieImagesItemsResponse(OrigFilmInfoWithImages),
         ]);
         var item = new Movie();
-        item.SetDefaultId(OrigFilmInfo.Id);
+        item.SetDefaultId(info.Id);
 
         var results = await imageProvider.GetImages(item, token);
 
@@ -246,15 +249,16 @@ public class MovieProviderTests
         Assert.Empty(expected);
     }
 
-    [Fact(Skip = "http client issue")] public async Task ShouldGetFullImages()
+    [Fact] public async Task ShouldGetFullImages()
     {
-        MockHttpClientFactory.SetResponses([
-            FilmPageResponse(OrigFilmInfoWithGallery),
+        var info = OrigFilmInfoWithGallery;
+        httpFactory.SetResponses([
+            FilmPageResponse(info),
             MovieImagesItemsResponse(OrigFilmInfoWithImages),
         ]);
         var item = new Movie();
-        item.SetDefaultId(OrigFilmInfo.Id);
-        item.SetContentId(OrigFilmInfo.ContentId);
+        item.SetDefaultId(info.Id);
+        item.SetContentId(info.ContentId);
 
         var results = await imageProvider.GetImages(item, token);
 
