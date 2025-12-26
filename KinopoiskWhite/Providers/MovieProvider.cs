@@ -68,20 +68,32 @@ public class MovieImageProvider
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        var result = await WithCache($"images_{kid}", async () => {
-            await _graphql.GetPerson(kid, cancellationToken);
+        var result = await WithCache($"images_{kid}", async () =>
+        {
             FilmInfo metadata = null;
+
             if (item.TryGetContentId(out string cid))
             {
                 _logger.LogDebug("Fetch by content id {cid}", cid);
                 ;
+                try
+                {
                 metadata = await _graphql.FilmPage(cid, cancellationToken)
                     .ConfigureAwait(false);
+                }
+                catch (Base.Error) {}
             }
+            else
+            {
+                metadata = await _graphql.FilmBaseInfo(kid, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             var result = await GetImagesById(kid, cancellationToken).ConfigureAwait(false);
             if (metadata != null)
             {
-                result = metadata with { Images = result.Images }; 
+                if (result == null) result = metadata;
+                else result = metadata with { Images = result.Images }; 
             }
             return result;
         });
@@ -97,7 +109,15 @@ public class MovieImageProvider
 
         foreach (var type in System.Enum.GetValues<FilmImageType>())
         {
-            var chunk = await _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+            FilmInfo chunk;
+            try
+            {
+                chunk = await _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+            }
+            catch
+            {
+                continue;
+            }
 
             resultCounter += $"{type}:{chunk.Images?.Items?.Length} ";
 

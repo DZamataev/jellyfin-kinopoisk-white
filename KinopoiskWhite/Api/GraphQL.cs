@@ -30,6 +30,14 @@ public interface IGraphQL
 
 public class GraphQL : BaseSingleton, IGraphQL
 {
+    public new class Error(string message) : Base.Error(message)
+    {
+        public class NullResponse(string message): Base.Error(message) {}
+        public class ElementIsNull(): NullResponse("Element is null") {}
+        public class DocumentIsNull(): NullResponse("Document is null") {}
+        public class DocumentInvalid(): Base.Error("Invalid document") {}
+    }
+
     private readonly HttpClient _client;
     private readonly HttpClient _apiClient;
     private readonly TaskQueue _queue;
@@ -93,7 +101,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(result))
-            throw new System.Exception("Document is null");
+            throw new Error.DocumentIsNull();
 
         try
         {
@@ -101,7 +109,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         }
         catch (JsonException)
         {
-            throw new System.Exception("Invalid document");
+            throw new Error.DocumentInvalid();
         }
     }
 
@@ -144,6 +152,9 @@ public class GraphQL : BaseSingleton, IGraphQL
     {
         foreach (var chunk in path.Split('.'))
             root = root.GetProperty(chunk);
+
+        if (root.ValueKind == JsonValueKind.Null)
+            throw new Error.ElementIsNull();
 
         return root;
     }

@@ -17,6 +17,8 @@ public abstract class Base {
     public string Name => Constants.ProviderName;
     public string Description => Constants.ProviderDescription;
     #pragma warning restore CA1822 // Mark members as static
+
+    public class Error(string message) : System.Exception(message) {}
 }
 
 
@@ -39,6 +41,16 @@ public abstract class BaseProvider<TMetadata>(
 
 where TMetadata : BaseMetadata
 {
+    public new class Error(string message) : Base.Error(message)
+    {
+        public class EmptySearchString() :
+            Base.Error($"Empty search string");
+        public class GettingKid(string path) :
+            Base.Error($"Get Kinopoisk Id failed [{path ?? "NULL"}]");
+        public class GettingRemote(string key) :
+            Base.Error($"Getting remote failed by {key}");
+    }
+
     protected readonly IGraphQL _graphql = graphQL;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private static readonly Dictionary<string, TMetadata> _cache = [];
@@ -54,6 +66,9 @@ where TMetadata : BaseMetadata
     GetSearchResults(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get search results {path}", path);
+
+        if (string.IsNullOrWhiteSpace(path))
+            throw new Error.EmptySearchString();
 
         var keywords = path.ParseFileName();
 
@@ -77,7 +92,7 @@ where TMetadata : BaseMetadata
         await foreach (var item in GetSearchResults(path, cancellationToken))
             return item;
 
-        throw new System.Exception($"Get Kinopoisk Id failed [{path ?? "NULL"}]");
+        throw new Error.GettingKid(path);
     }
 
     protected abstract Task<TMetadata> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);
@@ -103,7 +118,7 @@ where TMetadata : BaseMetadata
             var result = await task();
 
             _cache[key] = result ??
-                throw new System.Exception($"Getting remote failed by {key}");
+                throw new Error.GettingRemote(key);
 
             return result;
         }

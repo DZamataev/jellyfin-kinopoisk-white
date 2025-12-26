@@ -1,73 +1,23 @@
 using Xunit;
-using System.Net;
+
 using System.Net.Http;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-
-using Moq;
-using Moq.Protected;
 
 using KinopoiskWhite.Api;
 using KinopoiskWhite.Api.Models;
 
-namespace Test; 
-
-
-class MockGraphQL(
-    ILoggerFactory loggerFactory,
-    IHttpClientFactory httpClientFactory
-) : GraphQL(loggerFactory, httpClientFactory)
-{
-    public static string MockGetEmbeddedQuery(string fileName)
-    => GetEmbeddedQuery(fileName);
-
-    public async Task<JsonElement> MockCall(string operationName, object variables,
-                                            CancellationToken cancellationToken)
-    => await Call(operationName, variables, cancellationToken);
-
-    public async Task<JsonElement> MockCallApi(string method, CancellationToken cancellationToken)
-    => await CallApi(method, cancellationToken);
-
-    public static JsonElement MockWalk(JsonElement root, string path) => Walk(root, path);
-
-    public async Task<JsonElement> MockCall(string operationName, object variables, string path,
-                                            CancellationToken cancellationToken)
-    => await Call(operationName, variables, path, cancellationToken);
-
-    public async Task<FilmInfo> MockCallAndDeserialize(
-        string operationName, object variables, string path,
-        CancellationToken cancellationToken)
-    => await CallAndDeserialize(operationName, variables, path, cancellationToken);
-}
-
+namespace Test;
+using Common;
 
 public class GraphQlTests {
     private readonly MockGraphQL graphql;
+    readonly MockHttpClientFactory httpFactory = new();
     private readonly CancellationToken token = new();
 
-    private static readonly HttpResponseMessage response = new()
-    {
-        StatusCode = HttpStatusCode.OK,
-        Content = new StringContent("Mocked response")
-    };
-
-    private static HttpClient HttpClient {
-        get {
-            var handler = new Mock<HttpMessageHandler>();
-            handler.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>()
-                )
-                .ReturnsAsync(response);
-
-            return new HttpClient(handler.Object);
-        }
-    }
     private readonly FilmInfo origFilmInfo = new()
     {
         Id = 11,
@@ -80,18 +30,8 @@ public class GraphQlTests {
 
     public GraphQlTests()
     {
-        var factoryMock = new Mock<IHttpClientFactory>();
-        factoryMock.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(HttpClient);
-
-        var services = new ServiceCollection();
-        services.AddSingleton<IHttpClientFactory>(factoryMock.Object);
-        // MockGraphQL.RegisterServices(services);
-        var sp = services.BuildServiceProvider();
-
-        graphql = new MockGraphQL(
-            new LoggerFactory(),
-            sp.GetRequiredService<IHttpClientFactory>()
-        );
+        var logger = LoggerFactory.Create(builder => builder.AddDebug());
+        graphql = new MockGraphQL(logger, httpFactory.Object);
     }
 
     [Theory]
@@ -114,7 +54,7 @@ public class GraphQlTests {
     [Fact]
     public async Task ShouldCall()
     {
-        response.Content = new StringContent("{}");
+        httpFactory.SetResponse( new() { Content = new StringContent("{}") });
 
         var root = await graphql.MockCall("SuggestSearch", new(), token);
         Assert.Equal(JsonValueKind.Object, root.ValueKind);
@@ -123,7 +63,7 @@ public class GraphQlTests {
     [Fact]
     public async Task ShouldCallApi()
     {
-        response.Content = new StringContent("{}");
+        httpFactory.SetResponse( new() { Content = new StringContent("{}") });
 
         var root = await graphql.MockCallApi("test", token);
         Assert.Equal(JsonValueKind.Object, root.ValueKind);
@@ -132,23 +72,21 @@ public class GraphQlTests {
     [Fact]
     public async Task CallApiShouldThrowAnExceptionOnNull()
     {
-        response.Content = null;
+        httpFactory.SetResponse( new() { Content = null });
 
-        var ex = await Assert.ThrowsAsync<System.Exception>(async () =>
+        await Assert.ThrowsAsync<GraphQL.Error.DocumentIsNull>(async () =>
             await graphql.MockCallApi("test", token)
         );
-        Assert.Equal("Document is null", ex.Message);
     }
 
     [Fact]
     public async Task CallApiShouldThrowAnExceptionOnWrongResponse()
     {
-        response.Content = new StringContent("NOT JSON");
+        httpFactory.SetResponse( new() { Content = new StringContent("NOT JSON") });
 
-        var ex = await Assert.ThrowsAsync<System.Exception>(async () =>
+        await Assert.ThrowsAsync<GraphQL.Error.DocumentInvalid>(async () =>
             await graphql.MockCallApi("test", token)
         );
-        Assert.Equal("Invalid document", ex.Message);
     }
 
     [Fact]
@@ -165,7 +103,7 @@ public class GraphQlTests {
     public async Task ShouldCallAndWalk()
     {
         var example = new { child1 = new { child2 = new { value = 11 } } };
-        response.Content = JsonContent.Create(example);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(example) });
 
         var result = await graphql.MockCall("SuggestSearch", new(), "child1.child2.value", token);
         Assert.Equal(example.child1.child2.value, result.GetInt32());
@@ -176,7 +114,7 @@ public class GraphQlTests {
     {
         var example = new { child1 = new { child2 = new { value = origFilmInfo } } };
 
-        response.Content = JsonContent.Create(example);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(example) });
 
         var result = await graphql.MockCallAndDeserialize("SuggestSearch", new(), "child1.child2.value", token);
         Assert.Equal(origFilmInfo.Id, result.Id);
@@ -191,7 +129,7 @@ public class GraphQlTests {
                 movies = new[] { new { movie = origFilmInfo }, }
         }}}};
 
-        response.Content = JsonContent.Create(data);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(data) });
 
         var count = 0;
         await foreach (var film in graphql.SuggestSearch<FilmInfo>("keyword", token))
@@ -208,7 +146,7 @@ public class GraphQlTests {
     public async Task FilmBaseInfoShouldReturnResult()
     {
         var data = new { data = new { film = origFilmInfo }};
-        response.Content = JsonContent.Create(data);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(data) });
 
         var film = await graphql.FilmBaseInfo(origFilmInfo.Id, token);
 
@@ -221,7 +159,7 @@ public class GraphQlTests {
     public async Task FilmPageShouldReturnResult()
     {
         var data = new { data = new { movieByContentUuid = origFilmInfo }};
-        response.Content = JsonContent.Create(data);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(data) });
 
         var film = await graphql.FilmPage("contentId", token);
 
@@ -234,7 +172,7 @@ public class GraphQlTests {
     public async Task MovieImagesItemsShouldReturnResult()
     {
         var data = new { data = new { movie = origFilmInfo }};
-        response.Content = JsonContent.Create(data);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(data) });
 
         var film = await graphql.MovieImagesItems(origFilmInfo.Id, FilmImageType.POSTER, token);
 
@@ -251,7 +189,7 @@ public class GraphQlTests {
             Id = 123,
             Name = "Some Person"
         };
-        response.Content = JsonContent.Create(origPerson);
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(origPerson) });
 
         var person = await graphql.GetPerson(origPerson.Id, token);
 
@@ -259,17 +197,3 @@ public class GraphQlTests {
         Assert.Equal(origPerson.Name, person.Name);
     }
 }
-
-/*
-
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton<IHttpClientFactory>(_clientFactoryMock.Object);
-
-        var sp = services.BuildServiceProvider();
-        graphql = sp.GetRequiredService<IGraphQL>();
-
-        _api = new ApiServiceMovie(
-            LoggerFactory.Create(f => f.AddDebug()).CreateLogger<ApiServiceMovie>()
-        );
-*/

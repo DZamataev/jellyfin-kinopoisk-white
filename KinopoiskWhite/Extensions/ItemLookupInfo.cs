@@ -3,17 +3,32 @@ using MediaBrowser.Model.Entities;
 namespace KinopoiskWhite.Extensions;
 
 using Common;
+using Providers;
 
 
 public static class ItemLookupInfoExtensions
 {
+    public class Error(string message) : Base.Error(message)
+    {
+        public class WrongValue() : Base.Error("Wrong value");
+    }
     private static readonly string DefaultId = Constants.ProviderId;
 
     public static bool HasDefaultId(this IHasProviderIds info)
     => info.TryGetDefaultId(out var _);
 
     public static int GetDefaultId(this IHasProviderIds info)
-    => System.Convert.ToInt32(info.GetProviderId(DefaultId));
+    {
+        try
+        {
+            var value = info.GetProviderId(DefaultId);
+            return System.Convert.ToInt32(value ?? throw new Error.WrongValue());
+        }
+        catch
+        {
+            throw new Error.WrongValue();
+        }
+    }
 
     public static bool TryGetDefaultId(this IHasProviderIds info, out int kid)
     {

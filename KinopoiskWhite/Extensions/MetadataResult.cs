@@ -28,17 +28,17 @@ public static class MetadataResultExtensions
         item.SetDefaultId(metadata.Id);
         item.SetContentId(metadata.ContentId);
 
-        item.Name = metadata.Title.Russian;
-        item.OriginalTitle = metadata.Title.Original;
+        item.Name = metadata.Title?.Russian;
+        item.OriginalTitle = metadata.Title?.Original;
         item.ProductionYear = metadata.ProductionYear;
-        item.CommunityRating = metadata.Rating.Community;
-        item.CriticRating = metadata.Rating.Critics;
+        item.CommunityRating = metadata.Rating?.Community;
+        item.CriticRating = metadata.Rating?.Critics;
         item.CustomRating = metadata.Restriction?.Rating;
 
         item.Tagline = metadata.ShortDescription;
         item.Overview = metadata.Synopsis;
 
-        foreach (var genre in metadata.Genres)
+        foreach (var genre in metadata.Genres ?? [])
             item.AddGenre(genre.Slug);
     }
 
