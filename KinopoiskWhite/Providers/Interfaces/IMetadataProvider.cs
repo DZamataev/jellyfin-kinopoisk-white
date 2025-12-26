@@ -23,7 +23,7 @@ where TMetadata : BaseMetadata
     IRemoteMetadataProvider<TItemType, TLookupInfoType>.GetMetadata
     (TLookupInfoType info, CancellationToken cancellationToken)
     {
-        MetadataResult<TItemType> result = null;
+        MetadataResult<TItemType> result;
         try
         {
             result = await ResolveInfo(info, cancellationToken);
@@ -32,7 +32,7 @@ where TMetadata : BaseMetadata
 
             var metadata = await Fetch(kid, cancellationToken);
 
-            result.FillFrom(metadata ?? throw new System.Exception("Metadata is NULL"));
+            result.FillFrom(metadata ?? throw new Base.Error("Metadata is NULL"));
         }
         catch (Base.Error ex)
         {
@@ -42,7 +42,7 @@ where TMetadata : BaseMetadata
         return result;
     }
 
-    protected async Task<MetadataResult<TItemType>>
+    async Task<MetadataResult<TItemType>>
     ResolveInfo(TLookupInfoType info, CancellationToken cancellationToken)
     {
         var result = new MetadataResult<TItemType>

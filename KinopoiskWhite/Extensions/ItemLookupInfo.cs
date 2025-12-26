@@ -21,7 +21,8 @@ public static class ItemLookupInfoExtensions
     {
         try
         {
-            return System.Convert.ToInt32(info.GetProviderId(DefaultId));
+            var value = info.GetProviderId(DefaultId);
+            return System.Convert.ToInt32(value ?? throw new Error.WrongValue());
         }
         catch
         {

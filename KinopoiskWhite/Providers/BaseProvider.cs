@@ -43,6 +43,8 @@ where TMetadata : BaseMetadata
 {
     public new class Error(string message) : Base.Error(message)
     {
+        public class EmptySearchString() :
+            Base.Error($"Empty search string");
         public class GettingKid(string path) :
             Base.Error($"Get Kinopoisk Id failed [{path ?? "NULL"}]");
         public class GettingRemote(string key) :
@@ -64,6 +66,9 @@ where TMetadata : BaseMetadata
     GetSearchResults(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _logger.LogDebug("Get search results {path}", path);
+
+        if (string.IsNullOrWhiteSpace(path))
+            throw new Error.EmptySearchString();
 
         var keywords = path.ParseFileName();
 

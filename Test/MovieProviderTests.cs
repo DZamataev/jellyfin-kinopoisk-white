@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Entities.Movies;
 
@@ -19,7 +20,8 @@ namespace Test;
 
 using Common;
 using KinopoiskWhite.Common;
-using MediaBrowser.Model.Entities;
+using IMovieMetadataProvider = KinopoiskWhite.Providers.Interfaces.IMetadataProvider
+    <Movie, MovieInfo, FilmInfo>;
 
 class MockMovieMetadataProvider(
     ILoggerFactory logger,
@@ -28,14 +30,25 @@ class MockMovieMetadataProvider(
 ) :
     MovieMetadataProvider(logger, http, gql),
     IRemoteMetadataProvider<Movie, MovieInfo>
-{}
+{
+    public async Task<MetadataResult<Movie>>
+    MockResolveInfo(MovieInfo info, CancellationToken cancellationToken)
+    => await ((IMovieMetadataProvider)this).ResolveInfo(info, cancellationToken);
 
+    public async Task<MetadataResult<Movie>>
+    MockGetMetadata (MovieInfo info, CancellationToken cancellationToken)
+    => await ((IMovieMetadataProvider)this).GetMetadata(info, cancellationToken);
+}
+
+[CollectionDefinition("Sequential", DisableParallelization = true)]
+public class SequentialCollection { }
+
+[Collection("Sequential")]
 public class MovieProviderTests
 {
-    readonly MockMovieMetadataProvider provider;
+    readonly MockMovieMetadataProvider metadataProvider;
     readonly CancellationToken token = CancellationToken.None;
     readonly MockHttpClientFactory.MessageHandler handler = new();
-    IRemoteMetadataProvider<Movie, MovieInfo> Iprovider => provider;
 
     public MovieProviderTests()
     {
@@ -49,7 +62,7 @@ public class MovieProviderTests
 
         var sp = services.BuildServiceProvider();
 
-        provider = sp.GetRequiredService<MockMovieMetadataProvider>();
+        metadataProvider = sp.GetRequiredService<MockMovieMetadataProvider>();
     }
 
     readonly FilmInfo OrigFilmInfo = new()
@@ -63,7 +76,7 @@ public class MovieProviderTests
         ProductionYear = 1985,
     };
 
-    HttpResponseMessage SuggestSearchResponse(FilmInfo info) => new()
+    static HttpResponseMessage SuggestSearchResponse(FilmInfo info) => new()
     {
         StatusCode = System.Net.HttpStatusCode.OK,
         Content = JsonContent.Create(new {
@@ -73,7 +86,7 @@ public class MovieProviderTests
         }}}})
     };
 
-    HttpResponseMessage FilmInfoResponse(FilmInfo info) => new()
+    static HttpResponseMessage FilmInfoResponse(FilmInfo info) => new()
     {
         StatusCode = System.Net.HttpStatusCode.OK,
         Content = JsonContent.Create(new {
@@ -84,37 +97,39 @@ public class MovieProviderTests
 
     [Fact] public async Task ShouldGetResultItemById()
     {
-        handler.Responses = new([ request => FilmInfoResponse(OrigFilmInfo) ]);
+        handler.SetResponses([ request => FilmInfoResponse(OrigFilmInfo) ]);
         var item = new MovieInfo();
         item.SetDefaultId(OrigFilmInfo.Id);
-        var result = await Iprovider.GetMetadata(item, token);
+        var result = await metadataProvider.MockGetMetadata(item, token);
 
         Assert.Equal(OrigFilmInfo.Title.Russian, result?.Item?.Name);
     }
 
-    [Fact] public async Task ShouldReturnNullByIncorrectId()
+    [Fact] public async Task ShouldThrowByIncorrectId()
     {
+        handler.SetResponses([]);
         var item = new MovieInfo();
         item.SetProviderId(Constants.ProviderId, "123abc");
-        var result = await Iprovider.GetMetadata(item, token);
-
-        Assert.Null(result);
+        await Assert.ThrowsAsync<BaseProvider<FilmInfo>.Error.EmptySearchString>(async () =>
+            await metadataProvider.MockResolveInfo(item, token)
+        );
     }
 
-    [Fact] public async Task ShouldReturnNullByUnknownId()
+    [Fact] public async Task ShouldThrowByUnknownId()
     {
-        handler.Responses = new([ request => FilmInfoResponse(null) ]);
-        var item = new MovieInfo();
-        item.SetDefaultId(OrigFilmInfo.Id);
-        var result = await Iprovider.GetMetadata(item, token);
+        handler.SetResponses([ request => FilmInfoResponse(null) ]);
+        await Assert.ThrowsAsync<GraphQL.Error.ElementIsNull>(async () =>
+            await metadataProvider.Fetch(OrigFilmInfo.Id, token)
+        );
 
-        // Assert.Null(result);
     }
 
     [Fact] public async Task ShouldGetIdByKeyword()
     {
-        handler.Responses = new([ request => SuggestSearchResponse(OrigFilmInfo) ]);
-        var result = await provider.GetKinopoiskId("keyword", token);
-        Assert.Equal(OrigFilmInfo.Id, result.Id);
+        handler.SetResponses([ request => SuggestSearchResponse(OrigFilmInfo) ]);
+        MovieInfo item = new() { Path = "some path" };
+        var result = await metadataProvider.MockResolveInfo(item, token);
+
+        Assert.Equal(OrigFilmInfo.Title.Russian, result?.Item?.Name);
     }
 }

@@ -3,8 +3,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Test.Common;
+
+using Response = System.Func<HttpRequestMessage, HttpResponseMessage>;
 
 class MockHttpClientFactory(HttpMessageHandler handler)
 : IHttpClientFactory
@@ -17,7 +20,12 @@ class MockHttpClientFactory(HttpMessageHandler handler)
     public class MessageHandler()
     : HttpMessageHandler
     {
-        public Stack<System.Func<HttpRequestMessage, HttpResponseMessage>> Responses = new();
+        Stack<Response> Responses = new();
+
+        public void SetResponses(Response[] responses)
+        {
+            Responses = new([.. responses.Reverse()]);
+        }
 
         protected override Task<HttpResponseMessage>
         SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
