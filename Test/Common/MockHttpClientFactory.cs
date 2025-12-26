@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace Test.Common;
 
@@ -15,23 +15,30 @@ class MockHttpClientFactory(HttpMessageHandler handler)
     readonly HttpMessageHandler _handler = handler;
 
     public HttpClient CreateClient(string name = null) => new(_handler);
-    public HttpMessageHandler CreateHandler(string name) => _handler;
+    public HttpMessageHandler CreateHandler(string _) => _handler;
 
     public class MessageHandler()
     : HttpMessageHandler
     {
-        Stack<Response> Responses = new();
+        ConcurrentStack<Response> Responses = new();
+        readonly object _lock = new();
 
         public void SetResponses(Response[] responses)
         {
-            Responses = new([.. responses.Reverse()]);
+            lock(_lock)
+            {
+                Responses.Clear();
+                foreach (var response in responses.Reverse())
+                    Responses.Push(response);
+            }
         }
 
         protected override Task<HttpResponseMessage>
         SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (Responses.TryPop(out var response))
-                return Task.FromResult(response(request));
+            lock(_lock)
+                if (Responses.TryPop(out var response))
+                    return Task.FromResult(response(request));
 
             return Task.FromResult(new HttpResponseMessage{ StatusCode = HttpStatusCode.NotFound });
         }

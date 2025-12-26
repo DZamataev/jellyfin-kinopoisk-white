@@ -51,11 +51,11 @@ public record FilmGallery
     public FilmGalleryImages Posters { get; init; }
 
     public record FilmGalleryImages(
-        Image Square,
-        Image Horizontal,
-        Image Vertical,
-        Image MarketingVertical,
-        Image HdVertical,
-        Image KpVertical
+        Image Square = null,
+        Image Horizontal = null,
+        Image Vertical = null,
+        Image MarketingVertical = null,
+        Image HdVertical = null,
+        Image KpVertical = null
     );
 }
