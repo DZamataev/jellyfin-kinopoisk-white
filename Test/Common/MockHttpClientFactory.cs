@@ -24,6 +24,8 @@ public class MockHttpClientFactory: Mock<IHttpClientFactory>
             Responses.Push(response);
     }
 
+    public void SetResponse(HttpResponseMessage response) => SetResponses([response]);
+
     readonly Stack<HttpResponseMessage> Responses = new();
     HttpClient HttpClient {
         get {
