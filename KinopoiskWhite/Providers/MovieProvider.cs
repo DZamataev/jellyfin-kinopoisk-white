@@ -75,10 +75,6 @@ public class MovieImageProvider
         ImageType.Backdrop
     ];
 
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(BaseItem item, CancellationToken cancellationToken)
-    => await ((IFilmImageProvider<Movie, FilmInfo>)this).GetAllImages(item, cancellationToken);
-
     public Task<FilmInfo> GetInfoByContentId(string contentUuid, CancellationToken cancellationToken)
     => _graphql.CallAndDeserialize<FilmInfo>(
         "FilmPage",

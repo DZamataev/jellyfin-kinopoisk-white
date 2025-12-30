@@ -21,7 +21,7 @@ using KinopoiskWhite.Extensions;
 namespace Test;
 
 using Common;
-
+using KinopoiskWhite.Providers.Interfaces;
 using IMovieMetadataProvider = KinopoiskWhite.Providers.Interfaces.IMetadataProvider
     <Movie, MovieInfo, FilmInfo>;
 
@@ -177,7 +177,7 @@ public class MovieProviderTests
         var item = new Movie();
         item.SetDefaultId(info.Id);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -205,7 +205,7 @@ public class MovieProviderTests
         item.SetDefaultId(info.Id);
         item.SetContentId(info.ContentId);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -233,7 +233,7 @@ public class MovieProviderTests
         var item = new Movie();
         item.SetDefaultId(info.Id);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -264,7 +264,7 @@ public class MovieProviderTests
         item.SetDefaultId(info.Id);
         item.SetContentId(info.ContentId);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [

@@ -73,12 +73,8 @@ public class SeriesImageProvider
         ImageType.Backdrop
     ];
 
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetImages(BaseItem item, CancellationToken cancellationToken)
-    => await ((IFilmImageProvider<Series, FilmInfo>)this).GetAllImages(item, cancellationToken);
-
     public Task<FilmInfo> GetInfoByContentId(string contentId, CancellationToken cancellationToken)
-    => null;
+    => Task.FromResult<FilmInfo>(null);
 
     public Task<FilmInfo> GetImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
     => _graphql.CallAndDeserialize<FilmInfo>(

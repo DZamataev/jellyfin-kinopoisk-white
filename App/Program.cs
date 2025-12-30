@@ -12,6 +12,8 @@ using KinopoiskWhite.Common;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Providers;
+using KinopoiskWhite.Providers.Interfaces;
+using KinopoiskWhite.Api.Models;
 
 namespace App; 
 
@@ -117,7 +119,7 @@ class Program {
 
         var info = new Series();
         info.SetDefaultId(4468044);
-        var provider = new SeriesImageProvider(_logger, _http, _graphql);
+        IFilmImageProvider<Series, FilmInfo> provider = new SeriesImageProvider(_logger, _http, _graphql);
         RemoteImageInfo[] images = [.. await provider.GetImages(info, _token)];
         foreach (var image in images)
             Console.WriteLine($"{image}");

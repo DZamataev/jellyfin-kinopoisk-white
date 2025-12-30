@@ -49,8 +49,8 @@ where TMetadata : BaseMetadata
     Task<TMetadata> GetImagesItems(int kinopoiskId, FilmImageType type, CancellationToken cancellationToken);
     Task<object> WithCache(string key, System.Func<Task<object>> task);
 
-    public async Task<IEnumerable<RemoteImageInfo>>
-    GetAllImages(BaseItem item, CancellationToken cancellationToken)
+    async Task<IEnumerable<RemoteImageInfo>>
+    IRemoteImageProvider.GetImages(BaseItem item, CancellationToken cancellationToken)
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
@@ -67,7 +67,7 @@ where TMetadata : BaseMetadata
                 try
                 {
                 metadata = await GetInfoByContentId(cid, cancellationToken);
-                foreach (var img in metadata?.GetImages())
+                foreach (var img in metadata?.GetImages() ?? [])
                     images.Add(img);
                 }
                 catch (Base.Error ex)
