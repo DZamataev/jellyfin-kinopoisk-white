@@ -12,7 +12,7 @@ where TItemType : BaseItem
 {
     string BaseUrl => "https://www.kinopoisk.ru";
     string IExternalId.Key => Constants.ProviderId;
-    string IExternalId.ProviderName => Constants.ProviderName;
+    string IExternalId.ProviderName => Constants.ProviderNameShort;
     string IExternalId.UrlFormatString => $"{BaseUrl}/{ExternalIdPath}/{{0}}";
     ExternalIdMediaType? IExternalId.Type => null;
     bool IExternalId.Supports(IHasProviderIds item) => item is TItemType;
