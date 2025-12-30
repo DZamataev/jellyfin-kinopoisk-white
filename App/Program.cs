@@ -117,12 +117,19 @@ class Program {
         // var result = await _seriesProvider.GetMetadata(info, _token);
         // Console.WriteLine($"{result?.Item?.Name}");
 
-        var info = new Series();
-        info.SetDefaultId(4468044);
-        IFilmImageProvider<Series, FilmInfo> provider = new SeriesImageProvider(_logger, _http, _graphql);
-        RemoteImageInfo[] images = [.. await provider.GetImages(info, _token)];
-        foreach (var image in images)
-            Console.WriteLine($"{image}");
+        // var info = new Series();
+        // info.SetDefaultId(4468044);
+        // IFilmImageProvider<Series, FilmInfo> provider = new SeriesImageProvider(_logger, _http, _graphql);
+        // RemoteImageInfo[] images = [.. await provider.GetImages(info, _token)];
+        // foreach (var image in images)
+        //     Console.WriteLine($"{image}");
+
+        // var info = new MovieInfo();
+        // info.SetDefaultId(1405878);
+        var provider = new MovieMetadataProvider(_logger, _http, _graphql);
+        var result = await provider.GetInfoByKid(1405878, _token);
+        foreach (var item in result.Actors.Items)
+            Console.WriteLine($"{item.Person?.Name} | {item.Person?.OriginalName}");
 
         Console.WriteLine("Finished");
     }

@@ -15,6 +15,8 @@ using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
+using Common;
+using System.Linq;
 
 public abstract class PersonProvider
 (
@@ -67,10 +69,20 @@ public class PersonImageProvider
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        var result = (FilmPerson)await WithCache(
+        var metadata = (FilmPerson)await WithCache(
             $"images_{kid}",
             async () => await GetInfoByKid(kid, cancellationToken)
         );
-        return ((IFilmImageProvider<Person, FilmPerson>)this).Convert([.. result.GetImages()]);
+
+        return metadata.GetImages()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Item2))
+            .Select(x => new RemoteImageInfo()
+                {
+                    Type = x.Item1,
+                    Url = x.Item2,
+                    Language = Constants.ProviderMetadataLanguage,
+                    ProviderName = Constants.ProviderName,
+                }
+            );
     }
 }
