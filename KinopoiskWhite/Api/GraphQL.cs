@@ -19,6 +19,9 @@ using Providers;
 
 public interface IGraphQL
 {
+    Task<FilmInfo> CallAndDeserialize(
+        string operationName, object variables, string path,
+        CancellationToken cancellationToken);
     IAsyncEnumerable<T> SuggestSearch<T>(string keyword, CancellationToken cancellationToken)
     where T : BaseMetadata;
 
@@ -169,7 +172,7 @@ public class GraphQL : BaseSingleton, IGraphQL
         return Walk(root, path);
     }
 
-    protected async Task<FilmInfo> CallAndDeserialize(
+    public async Task<FilmInfo> CallAndDeserialize(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
