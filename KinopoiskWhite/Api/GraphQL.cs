@@ -19,16 +19,12 @@ using Providers;
 
 public interface IGraphQL
 {
-    Task<FilmInfo> CallAndDeserialize(
-        string operationName, object variables, string path,
-        CancellationToken cancellationToken);
     IAsyncEnumerable<T> SuggestSearch<T>(string keyword, CancellationToken cancellationToken)
     where T : BaseMetadata;
-
-    Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken);
-    Task<FilmInfo> FilmPage(string contentUuid, CancellationToken cancellationToken, int seasonNumber = 0, int episodeNumber = 0);
-    Task<FilmInfo> MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken);
-    Task<FilmPerson> GetPerson(int id, CancellationToken cancellationToken);
+    Task<T> CallAndDeserialize<T>(
+        string operationName, object variables, string path,
+        CancellationToken cancellationToken);
+    Task<T> CallAndDeserializeApi<T>(string path, CancellationToken cancellationToken);
 }
 
 public class GraphQL : BaseSingleton, IGraphQL
@@ -172,12 +168,12 @@ public class GraphQL : BaseSingleton, IGraphQL
         return Walk(root, path);
     }
 
-    public async Task<FilmInfo> CallAndDeserialize(
+    public async Task<T> CallAndDeserialize<T>(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
         var root = await Call(operationName, variables, path, cancellationToken);
-        return JsonSerializer.Deserialize<FilmInfo>(root, _jsonOptions);
+        return JsonSerializer.Deserialize<T>(root, _jsonOptions);
     }
 
     public async IAsyncEnumerable<T>
@@ -207,39 +203,11 @@ public class GraphQL : BaseSingleton, IGraphQL
                 item.GetProperty(result.GetItemPath()), _jsonOptions);
     }
 
-    public async Task<FilmInfo> FilmBaseInfo(int filmId, CancellationToken cancellationToken)
-    => await CallAndDeserialize(
-        "FilmBaseInfo", new
-        {
-            filmId,
-            isAuthorized = false,
-            actorsLimit = 10,
-            voiceOverActorsLimit = 0,
-            relatedMoviesLimit = 0,
-            checkSilentInvoiceAvailability = false,
-            withPurchaseOptions = false,
-            watchabilityLimit = 0,
-            socialArgumentLimit = 0,
-        },
-        "data.film", cancellationToken);
-
-    public async Task<FilmInfo>
-    FilmPage(string contentUuid, CancellationToken cancellationToken,
-             int seasonNumber = 0, int episodeNumber = 0)
-    => await CallAndDeserialize(
-        "FilmPage",
-        new { contentUuid, seasonNumber, episodeNumber, isAuthorized = false },
-        "data.movieByContentUuid", cancellationToken);
-
-    public async Task<FilmInfo>
-    MovieImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
-     => await CallAndDeserialize("MovieImagesItems", new { id, type, offset = 0, limit = 50 },
-                   "data.movie", cancellationToken);
-
-    public async Task<FilmPerson>
-    GetPerson(int id, CancellationToken cancellationToken)
+    public async Task<T> CallAndDeserializeApi<T>(
+        string path,
+        CancellationToken cancellationToken)
     {
-        var root = await CallApi($"person/{id}", cancellationToken);
-        return JsonSerializer.Deserialize<FilmPerson>(root, _jsonOptions);
+        var root = await CallApi(path, cancellationToken);
+        return JsonSerializer.Deserialize<T>(root, _jsonOptions);
     }
 }

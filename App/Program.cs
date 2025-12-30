@@ -11,12 +11,16 @@ using MediaBrowser.Model.Entities;
 using KinopoiskWhite.Common;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Model.Providers;
 
 namespace App; 
 
 class Program {
     // private static IApiService<FilmInfo> _apiMovies;
     // private static IRemoteImageProvider _imageProvider;
+    private static ILoggerFactory _logger;
+    private static IHttpClientFactory _http;
+    private static IGraphQL _graphql;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
     private static IRemoteMetadataProvider<Series, SeriesInfo> _seriesProvider;
     private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
@@ -49,6 +53,10 @@ class Program {
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
         _seriesProvider = sp.GetRequiredService<IRemoteMetadataProvider<Series, SeriesInfo>>();
         _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();
+
+        _logger = sp.GetRequiredService<ILoggerFactory>();
+        _http = sp.GetRequiredService<IHttpClientFactory>();
+        _graphql = sp.GetRequiredService<IGraphQL>();
 
         // _api = new KinopoiskApi(
         //     sp.GetRequiredService<IHttpClientFactory>()
@@ -102,10 +110,17 @@ class Program {
         // var person = await _api.GetPerson(25774, _token);
         // Console.WriteLine($"{person}");
 
-        var info = new SeriesInfo();
+        // var info = new SeriesInfo();
+        // info.SetDefaultId(4468044);
+        // var result = await _seriesProvider.GetMetadata(info, _token);
+        // Console.WriteLine($"{result?.Item?.Name}");
+
+        var info = new Series();
         info.SetDefaultId(4468044);
-        var result = await _seriesProvider.GetMetadata(info, _token);
-        Console.WriteLine($"{result?.Item?.Name}");
+        var provider = new SeriesImageProvider(_logger, _http, _graphql);
+        RemoteImageInfo[] images = [.. await provider.GetImages(info, _token)];
+        foreach (var image in images)
+            Console.WriteLine($"{image}");
 
         Console.WriteLine("Finished");
     }

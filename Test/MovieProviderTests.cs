@@ -197,7 +197,10 @@ public class MovieProviderTests
     public async Task ShouldGetImagesByContentId()
     {
         var info = OrigFilmInfoWithGallery;
-        httpFactory.SetResponses([ FilmPageResponse(info) ]);
+        httpFactory.SetResponses([
+            FilmInfoResponse(info),
+            FilmPageResponse(info)
+        ]);
         var item = new Movie();
         item.SetDefaultId(info.Id);
         item.SetContentId(info.ContentId);
@@ -253,6 +256,7 @@ public class MovieProviderTests
     {
         var info = OrigFilmInfoWithGallery;
         httpFactory.SetResponses([
+            FilmInfoResponse(info),
             FilmPageResponse(info),
             MovieImagesItemsResponse(OrigFilmInfoWithImages),
         ]);

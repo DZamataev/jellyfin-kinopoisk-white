@@ -23,8 +23,22 @@ public abstract class MovieProvider
     IGraphQL gql
 ) : BaseProvider<FilmInfo>(logger, http, gql)
 {
-    public override Task<FilmInfo> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken)
-    => _graphql.FilmBaseInfo(kinopoiskId, cancellationToken);
+    public override Task<FilmInfo> GetInfoByKid(int filmId, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserialize<FilmInfo>(
+        "FilmBaseInfo", new
+        {
+            filmId,
+            isAuthorized = false,
+            actorsLimit = 10,
+            voiceOverActorsLimit = 0,
+            relatedMoviesLimit = 0,
+            checkSilentInvoiceAvailability = false,
+            withPurchaseOptions = false,
+            watchabilityLimit = 0,
+            socialArgumentLimit = 0,
+        },
+        "data.film", cancellationToken);
+
 }
 
 public class MovieExternalId(ILoggerFactory logger)
@@ -65,9 +79,14 @@ public class MovieImageProvider
     GetImages(BaseItem item, CancellationToken cancellationToken)
     => await ((IFilmImageProvider<Movie, FilmInfo>)this).GetAllImages(item, cancellationToken);
 
-    public Task<FilmInfo> GetInfoByContentId(string contentId, CancellationToken cancellationToken)
-    => _graphql.FilmPage(contentId, cancellationToken);
+    public Task<FilmInfo> GetInfoByContentId(string contentUuid, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserialize<FilmInfo>(
+        "FilmPage",
+        new { contentUuid, seasonNumber = 0, episodeNumber = 0, isAuthorized = false },
+        "data.movieByContentUuid", cancellationToken);
 
-    public Task<FilmInfo> GetImagesItems(int kinopoiskId, FilmImageType type, CancellationToken cancellationToken)
-    => _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+    public Task<FilmInfo> GetImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserialize<FilmInfo>(
+        "MovieImagesItems", new { id, type, offset = 0, limit = 50 },
+        "data.movie", cancellationToken);
 }

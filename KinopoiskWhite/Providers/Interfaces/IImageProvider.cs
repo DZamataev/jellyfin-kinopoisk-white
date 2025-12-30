@@ -59,23 +59,22 @@ where TMetadata : BaseMetadata
             TMetadata metadata = null;
             HashSet<(ImageType, string)> images = [];
 
+            metadata = await GetInfoByKid(kid, cancellationToken);
+            foreach (var img in metadata?.GetImages())
+                images.Add(img);
+
             if (item.TryGetContentId(out string cid))
-            {
-                Logger.LogDebug("Fetch by content id {cid}", cid);
                 try
                 {
-                metadata = await GetInfoByContentId(cid, cancellationToken)
-                    .ConfigureAwait(false);
+                metadata = await GetInfoByContentId(cid, cancellationToken);
+                foreach (var img in metadata?.GetImages())
+                    images.Add(img);
                 }
-                catch (Base.Error) {}
-            }
-            else
-            {
-                metadata = await GetInfoByKid(kid, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            foreach (var img in metadata.GetImages())
-                images.Add(img);
+                catch (Base.Error ex)
+                {
+                    Logger.LogError("{message}", ex.Message);
+                }
+
             foreach (var img in await GetImagesById(kid, cancellationToken))
                 images.Add(img);
 

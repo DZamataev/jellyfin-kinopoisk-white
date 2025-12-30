@@ -24,7 +24,7 @@ public abstract class SeriesProvider
 ) : BaseProvider<FilmInfo>(logger, http, gql)
 {
     public override Task<FilmInfo> GetInfoByKid(int tvSeriesId, CancellationToken cancellationToken)
-    => _graphql.CallAndDeserialize(
+    => _graphql.CallAndDeserialize<FilmInfo>(
         "TvSeriesBaseInfo", new
         {
             tvSeriesId,
@@ -80,6 +80,8 @@ public class SeriesImageProvider
     public Task<FilmInfo> GetInfoByContentId(string contentId, CancellationToken cancellationToken)
     => null;
 
-    public Task<FilmInfo> GetImagesItems(int kinopoiskId, FilmImageType type, CancellationToken cancellationToken)
-    => _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
+    public Task<FilmInfo> GetImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserialize<FilmInfo>(
+        "MovieImagesItems", new { id, type, offset = 0, limit = 50 },
+        "data.movie", cancellationToken);
 }

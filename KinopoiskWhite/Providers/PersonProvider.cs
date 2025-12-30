@@ -24,7 +24,7 @@ public abstract class PersonProvider
 ) : BaseProvider<FilmPerson>(logger, http, gql)
 {
     public override Task<FilmPerson> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken)
-    => _graphql.GetPerson(kinopoiskId, cancellationToken);
+    => _graphql.CallAndDeserializeApi<FilmPerson>($"person/{kinopoiskId}", cancellationToken);
 }
 
 
@@ -69,7 +69,7 @@ public class PersonImageProvider
 
         var result = (FilmPerson)await WithCache(
             $"images_{kid}",
-            async () => await _graphql.GetPerson(kid, cancellationToken)
+            async () => await GetInfoByKid(kid, cancellationToken)
         );
         return ((IFilmImageProvider<Person, FilmPerson>)this).Convert([.. result.GetImages()]);
     }
