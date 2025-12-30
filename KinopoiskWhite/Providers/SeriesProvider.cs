@@ -14,7 +14,6 @@ namespace KinopoiskWhite.Providers;
 
 using Api;
 using Api.Models;
-using Extensions;
 using Interfaces;
 
 public abstract class SeriesProvider
@@ -24,18 +23,16 @@ public abstract class SeriesProvider
     IGraphQL gql
 ) : BaseProvider<FilmInfo>(logger, http, gql)
 {
-    protected override async Task<FilmInfo>
-    FetchAsync(int tvSeriesId, CancellationToken cancellationToken)
-    => await _graphql.CallAndDeserialize(
-        "TVSeriesBaseInfo", new
+    public override Task<FilmInfo> GetInfoByKid(int tvSeriesId, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserialize(
+        "TvSeriesBaseInfo", new
         {
             tvSeriesId,
             isAuthorized = false,
-            actorsLimit = 10,
-            voiceOverActorsLimit = 0,
-            relatedMoviesLimit = 0,
             checkSilentInvoiceAvailability = false,
             withPurchaseOptions = false,
+            actorsLimit = 10,
+            voiceOverActorsLimit = 0,
             watchabilityLimit = 0,
             socialArgumentLimit = 0,
         },
@@ -59,4 +56,30 @@ public class SeriesMetadataProvider
     IMetadataProvider<Series, SeriesInfo, FilmInfo>
 {
     public string GetSearchKeyword(SeriesInfo info) => info.Name;
+}
+
+
+public class SeriesImageProvider
+(
+    ILoggerFactory logger,
+    IHttpClientFactory http,
+    IGraphQL gql
+) :
+    SeriesProvider(logger, http, gql),
+    IFilmImageProvider<Series, FilmInfo>
+{
+    public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [
+        ImageType.Primary,
+        ImageType.Backdrop
+    ];
+
+    public async Task<IEnumerable<RemoteImageInfo>>
+    GetImages(BaseItem item, CancellationToken cancellationToken)
+    => await ((IFilmImageProvider<Series, FilmInfo>)this).GetAllImages(item, cancellationToken);
+
+    public Task<FilmInfo> GetInfoByContentId(string contentId, CancellationToken cancellationToken)
+    => null;
+
+    public Task<FilmInfo> GetImagesItems(int kinopoiskId, FilmImageType type, CancellationToken cancellationToken)
+    => _graphql.MovieImagesItems(kinopoiskId, type, cancellationToken);
 }

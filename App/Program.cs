@@ -9,6 +9,8 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Model.Entities;
 using KinopoiskWhite.Common;
+using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Plugins;
 
 namespace App; 
 
@@ -16,6 +18,7 @@ class Program {
     // private static IApiService<FilmInfo> _apiMovies;
     // private static IRemoteImageProvider _imageProvider;
     private static IRemoteMetadataProvider<Movie, MovieInfo> _movieProvider;
+    private static IRemoteMetadataProvider<Series, SeriesInfo> _seriesProvider;
     private static IRemoteMetadataProvider<Person, PersonLookupInfo> _personProvider;
     private static readonly CancellationToken _token = CancellationToken.None;
     
@@ -27,10 +30,14 @@ class Program {
             builder.AddConsole();
             builder.AddFilter("KinopoiskWhite.Api.GraphQL", LogLevel.Trace);
         });
+        var registrator = new GraphQL.Registrator();
+        registrator.RegisterServices(serviceCollection, null);
+
         serviceCollection.AddSingleton<IGraphQL, GraphQL>();
         // serviceCollection.AddSingleton<IApiService<FilmInfo>, ApiServiceMovie>();
         // serviceCollection.AddSingleton<IRemoteImageProvider, PersonProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Movie, MovieInfo>, MovieMetadataProvider>();
+        serviceCollection.AddSingleton<IRemoteMetadataProvider<Series, SeriesInfo>, SeriesMetadataProvider>();
         serviceCollection.AddSingleton<IRemoteMetadataProvider<Person, PersonLookupInfo>, PersonMetadataProvider>();
 
         var sp = serviceCollection.BuildServiceProvider(
@@ -40,6 +47,7 @@ class Program {
         // _apiMovies = sp.GetRequiredService<IApiService<FilmInfo>>();
         // _imageProvider = sp.GetRequiredService<IRemoteImageProvider>();
         _movieProvider = sp.GetRequiredService<IRemoteMetadataProvider<Movie, MovieInfo>>();
+        _seriesProvider = sp.GetRequiredService<IRemoteMetadataProvider<Series, SeriesInfo>>();
         _personProvider = sp.GetRequiredService<IRemoteMetadataProvider<Person, PersonLookupInfo>>();
 
         // _api = new KinopoiskApi(
@@ -53,16 +61,16 @@ class Program {
         Console.WriteLine("Started");
         // "Девушка в тумане (2017) BDRip-AVC_ivanes20031987.mkv".ParseFileName();
         // "04.Сумерки. Сага. Рассвет - Часть 1 (2011) BDRip 1080p [HEVC] 10 bit.mkv".ParseFileName();
-        "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4".ParseFileName();
+        // "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4".ParseFileName();
 
-        var info = new MovieInfo
-        {
-            Path = "Fight Club 1999.mkv"
-            // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
-            // Path = "F1. The Movie (2025).mkv"
-            // Path = "After.Life.1998.HDRip_[1.46].avi"
-            // Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
-        };
+        // var info = new MovieInfo
+        // {
+        //     Path = "Fight Club 1999.mkv"
+        //     // Path = "Idiocracy.2006.HDTV.720p.x264.YIFY.mp4"
+        //     // Path = "F1. The Movie (2025).mkv"
+        //     // Path = "After.Life.1998.HDRip_[1.46].avi"
+        //     // Path = "Other.2025.DUB.WEB-DLRip-AVC.x264.seleZen.mkv"
+        // };
         // var meta = await _api.GetKinopoiskId(info.Path, _token);
         // meta = await _api.Fetch(meta.Id, _token);
         // meta = await _api.GetImages(meta.Id, _token);
@@ -83,16 +91,21 @@ class Program {
         // foreach (var image in images)
         //     Console.WriteLine($"{image.Url}");
 
-        var item = new MovieInfo();
-        item.SetProviderId(Constants.ProviderId, "361aaa");
-        // item.SetDefaultId(361);
-        // item.Name = "fight club";
-        // item.Year = 1999;
-        var result = await _movieProvider.GetMetadata(item, _token);
-        Console.WriteLine($"{result?.Item?.Name}");
+        // var item = new MovieInfo();
+        // item.SetProviderId(Constants.ProviderId, "361aaa");
+        // // item.SetDefaultId(361);
+        // // item.Name = "fight club";
+        // // item.Year = 1999;
+        // var result = await _movieProvider.GetMetadata(item, _token);
+        // Console.WriteLine($"{result?.Item?.Name}");
 
         // var person = await _api.GetPerson(25774, _token);
         // Console.WriteLine($"{person}");
+
+        var info = new SeriesInfo();
+        info.SetDefaultId(4468044);
+        var result = await _seriesProvider.GetMetadata(info, _token);
+        Console.WriteLine($"{result?.Item?.Name}");
 
         Console.WriteLine("Finished");
     }

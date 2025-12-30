@@ -1,7 +1,11 @@
+using System.Collections.Generic;
+
 using MediaBrowser.Model.Providers;
 
 namespace KinopoiskWhite.Api.Models;
+
 using Extensions;
+using MediaBrowser.Model.Entities;
 
 public abstract record BaseMetadata
 {
@@ -10,6 +14,7 @@ public abstract record BaseMetadata
     public abstract string GetRootPath();
     public abstract string GetItemPath();
     public abstract RemoteSearchResult GetSearchResult();
+    public abstract IEnumerable<(ImageType, string)> GetImages();
 }
 
 public record FilmInfo: BaseMetadata
@@ -142,5 +147,30 @@ public record FilmInfo: BaseMetadata
         result.SetDefaultId(Id);
         result.SetContentId(ContentId);
         return result;
+    }
+
+    public override IEnumerable<(ImageType, string)> GetImages()
+    {
+        Dictionary<FilmImageType, ImageType> mapper = new() {
+            {FilmImageType.POSTER, ImageType.Primary},
+            {FilmImageType.COVER, ImageType.Primary},
+            {FilmImageType.FAN_ART, ImageType.Primary},
+            {FilmImageType.WALLPAPER, ImageType.Backdrop},
+            {FilmImageType.STILL, ImageType.Backdrop},
+            {FilmImageType.SCREENSHOT, ImageType.Backdrop},
+        };
+
+        if (Gallery != null)
+        {
+            yield return (ImageType.Logo, Gallery.Logos?.Horizontal?.Url);
+            yield return (ImageType.Primary, Gallery.Posters?.Vertical?.Url);
+            yield return (ImageType.Primary, Gallery.Posters?.MarketingVertical?.Url);
+        }
+
+        var items = Images?.Items;
+        if (items != null)
+            foreach (var item in items)
+                if (mapper.TryGetValue(item.Type, out ImageType type))
+                    yield return (type, item.Image.Url);
     }
 }

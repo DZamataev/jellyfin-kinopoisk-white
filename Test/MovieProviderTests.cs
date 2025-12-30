@@ -264,6 +264,7 @@ public class MovieProviderTests
 
         HashSet<string> expected =
         [
+            "https://marketing/576x",
             "https://posters/576x",
             "https://logos/576x",
             "https://wallpaper/576x",

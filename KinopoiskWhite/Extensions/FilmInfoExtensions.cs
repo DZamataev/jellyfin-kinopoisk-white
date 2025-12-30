@@ -1,3 +1,4 @@
+/*
 using System.Collections.Generic;
 
 using MediaBrowser.Model.Providers;
@@ -20,7 +21,7 @@ public static class FilmInfoExtensions
         {FilmImageType.SCREENSHOT, ImageType.Backdrop},
     };
 
-    public static IEnumerable<RemoteImageInfo> GetImages(this FilmInfo metadata)
+    public static IEnumerable<RemoteImageInfo> GetImages1(this FilmInfo metadata)
     {
         Dictionary<ImageType, List<string>> result = [];
 
@@ -66,7 +67,7 @@ public static class FilmInfoExtensions
         }
     }
 
-    public static IEnumerable<RemoteImageInfo> GetImages(this FilmPerson person)
+    public static IEnumerable<RemoteImageInfo> GetImages1(this FilmPerson person)
     {
         string[] urls = [
             person.Img?.PosterMedium?.X2,
@@ -84,3 +85,4 @@ public static class FilmInfoExtensions
     }
 
 }
+*/
