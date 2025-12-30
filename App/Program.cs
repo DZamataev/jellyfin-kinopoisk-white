@@ -126,10 +126,18 @@ class Program {
 
         // var info = new MovieInfo();
         // info.SetDefaultId(1405878);
-        var provider = new MovieMetadataProvider(_logger, _http, _graphql);
-        var result = await provider.GetInfoByKid(1405878, _token);
-        foreach (var item in result.Actors.Items)
-            Console.WriteLine($"{item.Person?.Name} | {item.Person?.OriginalName}");
+        // var provider = new MovieMetadataProvider(_logger, _http, _graphql);
+        // var result = await provider.GetInfoByKid(1405878, _token);
+        // foreach (var item in result.Actors.Items)
+        //     Console.WriteLine($"{item.Person?.Name} | {item.Person?.OriginalName}");
+
+        var info = new EpisodeInfo();
+        info.SeriesProviderIds[Constants.ProviderId] = "4468044";
+        info.ParentIndexNumber = 1;
+        info.IndexNumber = 7;
+        var provider = new EpisodeMetadataProvider(_logger, _http, _graphql);
+        var result = await provider.GetMetadata(info, _token);
+        Console.WriteLine($"{result.Item?.Name} {result.Item?.OriginalTitle}");
 
         Console.WriteLine("Finished");
     }

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 
 using MediaBrowser.Model.Providers;
+using MediaBrowser.Model.Entities;
 
 namespace KinopoiskWhite.Api.Models;
 
 using Extensions;
-using MediaBrowser.Model.Entities;
 
 public abstract record BaseMetadata
 {
@@ -45,7 +45,6 @@ public record FilmInfo: BaseMetadata
     public FilmPremiere WorldPremiere { get; init; }
     public FilmRestriction Restriction { get; init; }
 
-    public record FilmTitle(string Russian = "", string Original = "");
     public record Genre(string Name = "", string Slug = "");
 
     public record FilmRestriction
@@ -113,12 +112,6 @@ public record FilmInfo: BaseMetadata
     public record FilmPremiere
     {
         public FilmIncompleteDate IncompleteDate { get; init; }
-
-        public record FilmIncompleteDate
-        {
-            public string Accuracy { get; init; } = "";
-            public string Date { get; init; } = "";
-        }
     }
 
     public override RemoteSearchResult GetSearchResult()
@@ -174,3 +167,12 @@ public record FilmInfo: BaseMetadata
                     yield return (type, item.Image.Url);
     }
 }
+
+public record FilmIncompleteDate
+{
+    public string Accuracy { get; init; } = "";
+    public string Date { get; init; } = "";
+}
+public record FilmTitle(string Russian = "", string Original = "");
+
+public record FilmSeason(int? Id, int Number, string ContentId = "");

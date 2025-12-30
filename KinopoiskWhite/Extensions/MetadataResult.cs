@@ -19,6 +19,9 @@ public static class MetadataResultExtensions
             case FilmPerson person:
                 result.FillFrom(person);
                 break;
+            case FilmEpisode episode:
+                result.FillFrom(episode);
+                break;
         };
     }
 
@@ -74,18 +77,24 @@ public static class MetadataResultExtensions
     }
 
     private static void
-    FillFrom(this BaseItem item, FilmPerson metadata)
+    FillFrom<T>(this MetadataResult<T> result, FilmPerson metadata) where T : BaseItem
     {
-        item.SetDefaultId(metadata.Id);
-        item.Name = metadata.Name;
-        item.OriginalTitle = metadata.OriginalName;
+        result.Item.SetDefaultId(metadata.Id);
+        result.Item.Name = metadata.Name;
+        result.Item.OriginalTitle = metadata.OriginalName;
         // item.ProductionYear = metadata.BirthDate;
+        result.HasMetadata = true;
     }
 
     private static void
-    FillFrom<T>(this MetadataResult<T> result, FilmPerson metadata) where T : BaseItem
+    FillFrom<T>(this MetadataResult<T> result, FilmEpisode metadata) where T : BaseItem
     {
-        result.Item.FillFrom(metadata);
+        result.Item.SetDefaultId(metadata.Id);
+        result.Item.Name = metadata.Title?.Russian ?? metadata.Title?.Original;
+        result.Item.OriginalTitle = metadata.Title?.Original;
+        result.Item.ParentIndexNumber = metadata.Season?.Number;
+        result.Item.IndexNumber = metadata.Number;
+        // item.ProductionYear = metadata.ReleaseDate;
         result.HasMetadata = true;
     }
 }
