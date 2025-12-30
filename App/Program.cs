@@ -132,12 +132,14 @@ class Program {
         //     Console.WriteLine($"{item.Person?.Name} | {item.Person?.OriginalName}");
 
         var info = new EpisodeInfo();
-        info.SeriesProviderIds[Constants.ProviderId] = "4468044";
+        info.SeriesProviderIds[Constants.ProviderId] = "8140227";
+        info.SeasonProviderIds[Constants.ProviderName] = "1837f688187547cbb77dd55bb83fac9f";
         info.ParentIndexNumber = 1;
         info.IndexNumber = 7;
         var provider = new EpisodeMetadataProvider(_logger, _http, _graphql);
         var result = await provider.GetMetadata(info, _token);
         Console.WriteLine($"{result.Item?.Name} {result.Item?.OriginalTitle}");
+        Console.WriteLine($"{result.Item?.Overview}");
 
         Console.WriteLine("Finished");
     }

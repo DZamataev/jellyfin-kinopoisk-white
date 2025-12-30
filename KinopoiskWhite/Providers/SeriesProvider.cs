@@ -42,7 +42,7 @@ public abstract class SeriesProvider
 public class SeriesExternalId(ILoggerFactory logger)
 : BaseSingleton(logger), IExternalIdProvider<Series>
 {
-    public string ExternalIdPath => "film";
+    public string ExternalIdPath => "series";
 }
 
 public class SeriesMetadataProvider

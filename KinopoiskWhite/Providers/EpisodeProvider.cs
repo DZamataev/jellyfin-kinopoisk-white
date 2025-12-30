@@ -43,10 +43,33 @@ public class EpisodeMetadataProvider
         if (!int.TryParse(skid, out var kid)) return result;
 
         var episodes = (FilmEpisode[])await WithCache($"fetch_episodes_{kid}", async () =>
-            await _graphql.CallAndDeserialize<FilmEpisode[]>(
-                "TvSeriesEpisodes", new { tvSeriesId = kid, episodesLimit = 30 },
-                "data.tvSeries.releasedEpisodes.items", cancellationToken)
-        );
+        {
+            FilmEpisode[] episodes = [];
+
+            if (info.SeasonProviderIds.TryGetValue(Constants.ProviderName, out string cid))
+                try
+                {
+                    episodes = await _graphql.CallAndDeserialize<FilmEpisode[]>(
+                        "SerialStructureSeason", new {
+                            contentId = cid,
+                            limit = 50,
+                            offset = 0,
+                            withUserData = false
+                        },
+                        "data.seasonByContentId.episodes.items", cancellationToken);
+                }
+                catch (Base.Error ex)
+                {
+                    Logger.LogError("{message}", ex.Message);
+                }
+
+            if (episodes.Length == 0)
+                episodes = await _graphql.CallAndDeserialize<FilmEpisode[]>(
+                    "TvSeriesEpisodes", new { tvSeriesId = kid, episodesLimit = 30 },
+                    "data.tvSeries.releasedEpisodes.items", cancellationToken);
+
+            return episodes;
+        });
 
         var episode = episodes.FirstOrDefault(e =>
             e.Number == info.IndexNumber &&

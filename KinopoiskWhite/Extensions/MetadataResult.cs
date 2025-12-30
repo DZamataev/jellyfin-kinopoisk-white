@@ -94,6 +94,7 @@ public static class MetadataResultExtensions
         result.Item.OriginalTitle = metadata.Title?.Original;
         result.Item.ParentIndexNumber = metadata.Season?.Number;
         result.Item.IndexNumber = metadata.Number;
+        result.Item.Overview = metadata.Synopsis;
         // item.ProductionYear = metadata.ReleaseDate;
         result.HasMetadata = true;
     }
