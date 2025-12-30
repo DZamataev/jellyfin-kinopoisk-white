@@ -8,7 +8,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
-using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 
 namespace KinopoiskWhite.Providers;
 
@@ -16,70 +16,65 @@ using Api;
 using Api.Models;
 using Interfaces;
 
-public abstract class MovieProvider
+public abstract class SeriesProvider
 (
     ILoggerFactory logger,
     IHttpClientFactory http,
     IGraphQL gql
 ) : BaseProvider<FilmInfo>(logger, http, gql)
 {
-    public override Task<FilmInfo> GetInfoByKid(int filmId, CancellationToken cancellationToken)
+    public override Task<FilmInfo> GetInfoByKid(int tvSeriesId, CancellationToken cancellationToken)
     => _graphql.CallAndDeserialize<FilmInfo>(
-        "FilmBaseInfo", new
+        "TvSeriesBaseInfo", new
         {
-            filmId,
+            tvSeriesId,
             isAuthorized = false,
-            actorsLimit = 10,
-            voiceOverActorsLimit = 0,
-            relatedMoviesLimit = 0,
             checkSilentInvoiceAvailability = false,
             withPurchaseOptions = false,
+            actorsLimit = 10,
+            voiceOverActorsLimit = 0,
             watchabilityLimit = 0,
             socialArgumentLimit = 0,
         },
-        "data.film", cancellationToken);
-
+        "data.tvSeries", cancellationToken);
 }
 
-public class MovieExternalId(ILoggerFactory logger)
-: BaseSingleton(logger), IExternalIdProvider<Movie>
+public class SeriesExternalId(ILoggerFactory logger)
+: BaseSingleton(logger), IExternalIdProvider<Series>
 {
-    public string ExternalIdPath => "film";
+    public string ExternalIdPath => "series";
 }
 
-
-public class MovieMetadataProvider
+public class SeriesMetadataProvider
 (
     ILoggerFactory logger,
     IHttpClientFactory http,
     IGraphQL gql
 ) :
-    MovieProvider(logger, http, gql),
-    ISearchProvider<MovieInfo, FilmInfo>,
-    IMetadataProvider<Movie, MovieInfo, FilmInfo>
+    SeriesProvider(logger, http, gql),
+    ISearchProvider<SeriesInfo, FilmInfo>,
+    IMetadataProvider<Series, SeriesInfo, FilmInfo>
 {
-    public string GetSearchKeyword(MovieInfo info) => info.Path;
+    public string GetSearchKeyword(SeriesInfo info) => info.Name;
 }
 
-public class MovieImageProvider
+
+public class SeriesImageProvider
 (
     ILoggerFactory logger,
     IHttpClientFactory http,
     IGraphQL gql
 ) :
-    MovieProvider(logger, http, gql),
-    IFilmImageProvider<Movie, FilmInfo>
+    SeriesProvider(logger, http, gql),
+    IFilmImageProvider<Series, FilmInfo>
 {
     public IEnumerable<ImageType> GetSupportedImages(BaseItem item) => [
         ImageType.Primary,
         ImageType.Backdrop
     ];
 
-    public Task<FilmInfo> GetInfoByContentId(string contentUuid, CancellationToken cancellationToken)
-    => _graphql.CallAndDeserialize<FilmInfo>(
-        "FilmPage",
-        new { contentUuid, seasonNumber = 0, episodeNumber = 0, isAuthorized = false },
-        "data.movieByContentUuid", cancellationToken);
+    public Task<FilmInfo> GetInfoByContentId(string contentId, CancellationToken cancellationToken)
+    => Task.FromResult<FilmInfo>(null);
 
     public Task<FilmInfo> GetImagesItems(int id, FilmImageType type, CancellationToken cancellationToken)
     => _graphql.CallAndDeserialize<FilmInfo>(

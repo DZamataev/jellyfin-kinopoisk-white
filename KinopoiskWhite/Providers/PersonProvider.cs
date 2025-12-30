@@ -15,6 +15,8 @@ using Api;
 using Api.Models;
 using Extensions;
 using Interfaces;
+using Common;
+using System.Linq;
 
 public abstract class PersonProvider
 (
@@ -23,9 +25,8 @@ public abstract class PersonProvider
     IGraphQL gql
 ) : BaseProvider<FilmPerson>(logger, http, gql)
 {
-    protected override async Task<FilmPerson>
-    FetchAsync(int kinopoiskId, CancellationToken cancellationToken)
-    => await _graphql.GetPerson(kinopoiskId, cancellationToken);
+    public override Task<FilmPerson> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken)
+    => _graphql.CallAndDeserializeApi<FilmPerson>($"person/{kinopoiskId}", cancellationToken);
 }
 
 
@@ -68,11 +69,20 @@ public class PersonImageProvider
     {
         if (!item.TryGetDefaultId(out int kid)) return [];
 
-        var result = await WithCache(
+        var metadata = (FilmPerson)await WithCache(
             $"images_{kid}",
-            async () => await _graphql.GetPerson(kid, cancellationToken)
+            async () => await GetInfoByKid(kid, cancellationToken)
         );
 
-        return result.GetImages();
+        return metadata.GetImages()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Item2))
+            .Select(x => new RemoteImageInfo()
+                {
+                    Type = x.Item1,
+                    Url = x.Item2,
+                    Language = Constants.ProviderMetadataLanguage,
+                    ProviderName = Constants.ProviderName,
+                }
+            );
     }
 }

@@ -53,7 +53,7 @@ where TMetadata : BaseMetadata
 
     protected readonly IGraphQL _graphql = graphQL;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private static readonly Dictionary<string, TMetadata> _cache = [];
+    private static readonly Dictionary<string, object> _cache = [];
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public Task<HttpResponseMessage>
@@ -95,20 +95,20 @@ where TMetadata : BaseMetadata
         throw new Error.GettingKid(path);
     }
 
-    protected abstract Task<TMetadata> FetchAsync(int kinopoiskId, CancellationToken cancellationToken);
+    public abstract Task<TMetadata> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken);
     public async Task<TMetadata> Fetch(int kinopoiskId, CancellationToken cancellationToken)
-    => await WithCache(
+    => (TMetadata)await WithCache(
         $"fetch_{kinopoiskId}",
-        async () => await FetchAsync(kinopoiskId, cancellationToken)
+        async () => await GetInfoByKid(kinopoiskId, cancellationToken)
     );
 
-    protected async Task<TMetadata> WithCache(string key, System.Func<Task<TMetadata>> task)
+    public async Task<object> WithCache(string key, System.Func<Task<object>> task)
     {
         await _semaphore.WaitAsync();
 
         try
         {
-            if (_cache.TryGetValue(key, out TMetadata cached))
+            if (_cache.TryGetValue(key, out object cached))
             {
                 _logger.LogDebug("Getting cached by {key}", key);
                 return cached;

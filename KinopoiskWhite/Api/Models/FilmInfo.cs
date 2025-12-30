@@ -1,6 +1,10 @@
+using System.Collections.Generic;
+
 using MediaBrowser.Model.Providers;
+using MediaBrowser.Model.Entities;
 
 namespace KinopoiskWhite.Api.Models;
+
 using Extensions;
 
 public abstract record BaseMetadata
@@ -10,6 +14,7 @@ public abstract record BaseMetadata
     public abstract string GetRootPath();
     public abstract string GetItemPath();
     public abstract RemoteSearchResult GetSearchResult();
+    public abstract IEnumerable<(ImageType, string)> GetImages();
 }
 
 public record FilmInfo: BaseMetadata
@@ -40,7 +45,6 @@ public record FilmInfo: BaseMetadata
     public FilmPremiere WorldPremiere { get; init; }
     public FilmRestriction Restriction { get; init; }
 
-    public record FilmTitle(string Russian = "", string Original = "");
     public record Genre(string Name = "", string Slug = "");
 
     public record FilmRestriction
@@ -108,12 +112,6 @@ public record FilmInfo: BaseMetadata
     public record FilmPremiere
     {
         public FilmIncompleteDate IncompleteDate { get; init; }
-
-        public record FilmIncompleteDate
-        {
-            public string Accuracy { get; init; } = "";
-            public string Date { get; init; } = "";
-        }
     }
 
     public override RemoteSearchResult GetSearchResult()
@@ -143,4 +141,38 @@ public record FilmInfo: BaseMetadata
         result.SetContentId(ContentId);
         return result;
     }
+
+    public override IEnumerable<(ImageType, string)> GetImages()
+    {
+        Dictionary<FilmImageType, ImageType> mapper = new() {
+            {FilmImageType.POSTER, ImageType.Primary},
+            {FilmImageType.COVER, ImageType.Primary},
+            {FilmImageType.FAN_ART, ImageType.Primary},
+            {FilmImageType.WALLPAPER, ImageType.Backdrop},
+            {FilmImageType.STILL, ImageType.Backdrop},
+            {FilmImageType.SCREENSHOT, ImageType.Backdrop},
+        };
+
+        if (Gallery != null)
+        {
+            yield return (ImageType.Logo, Gallery.Logos?.Horizontal?.Url);
+            yield return (ImageType.Primary, Gallery.Posters?.Vertical?.Url);
+            yield return (ImageType.Primary, Gallery.Posters?.MarketingVertical?.Url);
+        }
+
+        var items = Images?.Items;
+        if (items != null)
+            foreach (var item in items)
+                if (mapper.TryGetValue(item.Type, out ImageType type))
+                    yield return (type, item.Image.Url);
+    }
 }
+
+public record FilmIncompleteDate
+{
+    public string Accuracy { get; init; } = "";
+    public string Date { get; init; } = "";
+}
+public record FilmTitle(string Russian = "", string Original = "");
+
+public record FilmSeason(int? Id, int Number, string ContentId = "");

@@ -21,7 +21,7 @@ using KinopoiskWhite.Extensions;
 namespace Test;
 
 using Common;
-
+using KinopoiskWhite.Providers.Interfaces;
 using IMovieMetadataProvider = KinopoiskWhite.Providers.Interfaces.IMetadataProvider
     <Movie, MovieInfo, FilmInfo>;
 
@@ -177,7 +177,7 @@ public class MovieProviderTests
         var item = new Movie();
         item.SetDefaultId(info.Id);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -197,12 +197,15 @@ public class MovieProviderTests
     public async Task ShouldGetImagesByContentId()
     {
         var info = OrigFilmInfoWithGallery;
-        httpFactory.SetResponses([ FilmPageResponse(info) ]);
+        httpFactory.SetResponses([
+            FilmInfoResponse(info),
+            FilmPageResponse(info)
+        ]);
         var item = new Movie();
         item.SetDefaultId(info.Id);
         item.SetContentId(info.ContentId);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -230,7 +233,7 @@ public class MovieProviderTests
         var item = new Movie();
         item.SetDefaultId(info.Id);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
@@ -253,6 +256,7 @@ public class MovieProviderTests
     {
         var info = OrigFilmInfoWithGallery;
         httpFactory.SetResponses([
+            FilmInfoResponse(info),
             FilmPageResponse(info),
             MovieImagesItemsResponse(OrigFilmInfoWithImages),
         ]);
@@ -260,10 +264,11 @@ public class MovieProviderTests
         item.SetDefaultId(info.Id);
         item.SetContentId(info.ContentId);
 
-        var results = await imageProvider.GetImages(item, token);
+        var results = await ((IImageProvider<Movie, FilmInfo>)imageProvider).GetImages(item, token);
 
         HashSet<string> expected =
         [
+            "https://marketing/576x",
             "https://posters/576x",
             "https://logos/576x",
             "https://wallpaper/576x",

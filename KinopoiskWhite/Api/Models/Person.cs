@@ -1,22 +1,50 @@
 using MediaBrowser.Model.Providers;
 
 namespace KinopoiskWhite.Api.Models;
+
+using System.Collections.Generic;
 using Extensions;
+using MediaBrowser.Model.Entities;
 
 public record FilmPerson : BaseMetadata {
     public override string GetRootPath() => "persons";
     public override string GetItemPath() => "person";
 
-    public string Name { get; init; } = "";
-    public string OriginalName { get; init; } = "";
+    private string _name;
+    public string Name {
+        get => _name ?? OriginalName;
+        init => _name = value;
+    }
+    public string OriginalName { get; init; }
     public Gallery[] Gallery { get; init; }
     public FilmPersonImg Img { get; init; }
 
     public override RemoteSearchResult GetSearchResult()
     {
-        RemoteSearchResult result = new() { Name = Name };
+        RemoteSearchResult result = new() { Name = Name ?? OriginalName };
+        foreach (var (_, url) in GetImages())
+        {
+            result.ImageUrl = url;
+            break;
+        }
+
         result.SetDefaultId(Id);
         return result;
+    }
+
+    public override IEnumerable<(ImageType, string)> GetImages()
+    {
+        if (Img?.PosterMedium?.X1 != null)
+            yield return (ImageType.Thumb, $"https:{Img.PosterMedium.X1}");
+
+        if (Img?.PosterMedium?.X2 != null)
+            yield return (ImageType.Primary, $"https:{Img.PosterMedium.X2}");
+
+        foreach (var img in Gallery ?? [])
+        {
+            if (img != null)
+                yield return (ImageType.Primary, $"https:{img.BaseUrl}/576x");
+        }
     }
 }
 

@@ -34,5 +34,5 @@ class MockGraphQL(
     public async Task<FilmInfo> MockCallAndDeserialize(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
-    => await CallAndDeserialize(operationName, variables, path, cancellationToken);
+    => await CallAndDeserialize<FilmInfo>(operationName, variables, path, cancellationToken);
 }
