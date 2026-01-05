@@ -1,5 +1,5 @@
 {
-    "olasoft.pluginDll": "${workspaceFolder}/KinopoiskWhite/bin/Debug/net8.0/KinopoiskWhite.dll",
+    "olasoft.pluginDll": "${workspaceFolder}/KinopoiskWhite/bin/Debug/net9.0/KinopoiskWhite.dll",
     "olasoft.outputDir": "/output/KinopoiskWhite",
     "dotnetAcquisitionExtension.enableTelemetry": false,
 }

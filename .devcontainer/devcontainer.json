@@ -1,5 +1,5 @@
 {
-    "image": "vscode-dotnet:8.0",
+    "image": "vscode-dotnet:9.0",
     "runArgs": [ "--hostname", "dev" ],
     "mounts": [
         {
@@ -9,7 +9,7 @@
         },
         {
             "type": "bind",
-            "source": "/Users/bear/Library/Application Support/jellyfin/plugins",
+            "source": "/opt/jellyfin/plugins",
             "target": "/output"
         }
     ]
