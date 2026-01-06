@@ -141,4 +141,20 @@ public class GraphQlTests {
         }
         Assert.Equal(2, count);
     }
+
+    [Fact]
+    public async Task SuggestSearchShouldNotYieldOnNullResponse()
+    {
+        var data = new { data = new { suggest = new { top = new {
+            topResult = (object)null,
+            movies = System.Array.Empty<object>()
+        }
+        }}};
+
+        httpFactory.SetResponse( new() { Content = JsonContent.Create(data) });
+
+        await foreach (var _ in graphql.SuggestSearch<FilmInfo>("keyword", token))
+            Assert.Fail("Should not yield");
+    }
 }
+

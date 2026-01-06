@@ -18,7 +18,10 @@ public abstract class Base {
     public string Description => Constants.ProviderDescription;
     #pragma warning restore CA1822 // Mark members as static
 
-    public class Error(string message) : System.Exception(message) {}
+    public class Error(string message) : System.Exception(message)
+    {
+        public class NotImplemented() : Error("Not implemented");
+    }
 }
 
 
@@ -39,7 +42,7 @@ public abstract class BaseProvider<TMetadata>(
     IGraphQL graphQL
 ) : BaseSingleton(loggerFactory)
 
-where TMetadata : BaseMetadata
+where TMetadata : BaseMetadata, new()
 {
     public new class Error(string message) : Base.Error(message)
     {
