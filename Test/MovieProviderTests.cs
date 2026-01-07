@@ -153,7 +153,7 @@ public class MovieProviderTests
     {
         var info = OrigFilmInfo;
         httpFactory.SetResponses([ FilmInfoResponse(null) ]);
-        await Assert.ThrowsAsync<GraphQL.Error.ElementIsNull>(async () =>
+        await Assert.ThrowsAsync<BaseProvider<FilmInfo>.Error.GettingRemote>(async () =>
             await metadataProvider.Fetch(info.Id, token)
         );
 

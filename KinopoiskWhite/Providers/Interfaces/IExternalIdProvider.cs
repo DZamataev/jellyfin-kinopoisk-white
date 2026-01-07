@@ -1,20 +1,21 @@
-using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Providers;
+using System.Collections.Generic;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 
 namespace KinopoiskWhite.Providers.Interfaces;
 
 using Common;
+using KinopoiskWhite.Extensions;
 
-public interface IExternalIdProvider<TItemType>: IExternalId
+public interface IExternalIdProvider<TItemType>: IExternalUrlProvider
 where TItemType : BaseItem
 {
     string BaseUrl => "https://www.kinopoisk.ru";
-    string IExternalId.Key => Constants.ProviderId;
-    string IExternalId.ProviderName => Constants.ProviderNameShort;
-    string IExternalId.UrlFormatString => $"{BaseUrl}/{ExternalIdPath}/{{0}}";
-    ExternalIdMediaType? IExternalId.Type => null;
-    bool IExternalId.Supports(IHasProviderIds item) => item is TItemType;
+    string IExternalUrlProvider.Name => Constants.ProviderNameShort;
     string ExternalIdPath { get; }
+    IEnumerable<string> IExternalUrlProvider.GetExternalUrls(BaseItem item)
+    {
+        if (item is TItemType && item.TryGetDefaultId(out var kid))
+            yield return $"{BaseUrl}/{ExternalIdPath}/{kid}";
+    }
 }

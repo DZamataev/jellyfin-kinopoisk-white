@@ -20,7 +20,7 @@ using Providers;
 public interface IGraphQL
 {
     IAsyncEnumerable<T> SuggestSearch<T>(string keyword, CancellationToken cancellationToken)
-    where T : BaseMetadata;
+    where T : BaseMetadata, new();
     Task<T> CallAndDeserialize<T>(
         string operationName, object variables, string path,
         CancellationToken cancellationToken);
@@ -150,10 +150,12 @@ public class GraphQL : BaseSingleton, IGraphQL
     protected static JsonElement Walk(JsonElement root, string path)
     {
         foreach (var chunk in path.Split('.'))
-            root = root.GetProperty(chunk);
+        {
+            if (root.ValueKind == JsonValueKind.Null)
+                throw new Error.ElementIsNull();
 
-        if (root.ValueKind == JsonValueKind.Null)
-            throw new Error.ElementIsNull();
+            root = root.GetProperty(chunk);
+        }
 
         return root;
     }
@@ -178,7 +180,7 @@ public class GraphQL : BaseSingleton, IGraphQL
 
     public async IAsyncEnumerable<T>
     SuggestSearch<T>(string keyword, [EnumeratorCancellation] CancellationToken cancellationToken)
-    where T : BaseMetadata
+    where T : BaseMetadata, new()
     {
         var root = await Call(
             "SuggestSearch",
@@ -187,20 +189,23 @@ public class GraphQL : BaseSingleton, IGraphQL
             cancellationToken
         ).ConfigureAwait(false);
 
-        var top = root.GetProperty("topResult").GetProperty("global");
-
-        T result = default(T);
+        T result = null;
         try
         {
+            var top = Walk(root, "topResult.global");
             result = JsonSerializer.Deserialize<T>(top, _jsonOptions);
         }
         catch { }
 
         if (result != null) yield return result;
+        else result = new();
 
-        foreach (var item in root.GetProperty(result.GetRootPath()).EnumerateArray())
+        var rootPath = result.GetRootPath();
+        var itemPath = result.GetItemPath();
+
+        foreach (var item in root.GetProperty(rootPath).EnumerateArray())
             yield return JsonSerializer.Deserialize<T>(
-                item.GetProperty(result.GetItemPath()), _jsonOptions);
+                item.GetProperty(itemPath), _jsonOptions);
     }
 
     public async Task<T> CallAndDeserializeApi<T>(
