@@ -11,7 +11,7 @@ In difference of [kinopoisk unofficial plugin](https://github.com/LinFor/jellyfi
 ### Automatic
 
 1. Navigate to Settings -> Admin Dashboard -> Plugins -> Repositories
-1. Add a new repository with a Repository URL of `https://raw.githubusercontent.com/MiklinMA/jellyfin-kinopoisk-white/master/manifest.json`. The name can be anything you like (such as `KinoPoisk`).
+1. Add a new repository with a Repository URL of `https://raw.githubusercontent.com/MiklinMA/jellyfin-kinopoisk-white/refs/heads/master/manifest.json`. The name can be anything you like (such as `KinoPoisk`).
 1. Save and navigate to Catalogue.
 1. `Кинопоиск (белый список)` should be present. Click on it and install the latest version.
 
