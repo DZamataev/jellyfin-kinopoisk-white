@@ -7,6 +7,15 @@
     "owner": "MiklinMA",
     "description": "Загружает метаданные с сайта КиноПоиск",
     "imageUrl": "https://avatars.mds.yandex.net/get-vthumb/880526/8e310a4ac77a414a5fc3c20eba8bb6a1/800x450",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Jellyfin legacy (v10.10) compatible version.\n",
+        "targetAbi": "10.10.0.0",
+        "timestamp": "2026-01-01T00:00:00.0000000Z",
+        "sourceUrl": "https://github.com/MiklinMA/jellyfin-kinopoisk-white/releases/download/v10.10/KinopoiskWhite.zip",
+        "checksum": "a78ac3706ee703d4b02234607cc0d9b2"
+      }
+    ]
   }
 ]
