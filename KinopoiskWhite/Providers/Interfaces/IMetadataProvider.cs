@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 using MediaBrowser.Controller.Entities;
@@ -63,8 +64,9 @@ where TMetadata : BaseMetadata
 
         result.QueriedById = false;
 
-        var keyword = GetSearchKeyword(info);
-        result.FillFrom(await GetKinopoiskId(keyword, cancellationToken));
+        var keywords = GetSearchKeywords(info);
+        var year = GetSearchYear(info);
+        result.FillFrom(await GetKinopoiskId(keywords, year, cancellationToken));
         info.SetDefaultId(result.Item.GetDefaultId());
 
         Logger.LogInformation("Found item {name} as {newName}", info.Name, result.Item.Name);
@@ -72,7 +74,10 @@ where TMetadata : BaseMetadata
         return result;
     }
 
-    string GetSearchKeyword(TLookupInfoType info);
+    // Ordered search-keyword candidates (best first). The default year comes from
+    // Jellyfin's own filename parse; providers may override both.
+    IEnumerable<string> GetSearchKeywords(TLookupInfoType info);
+    int? GetSearchYear(TLookupInfoType info) => info.Year;
     Task<TMetadata> Fetch(int kinopoiskId, CancellationToken cancellationToken);
-    Task<TMetadata> GetKinopoiskId(string path, CancellationToken cancellationToken);
+    Task<TMetadata> GetKinopoiskId(IEnumerable<string> keywords, int? year, CancellationToken cancellationToken);
 }

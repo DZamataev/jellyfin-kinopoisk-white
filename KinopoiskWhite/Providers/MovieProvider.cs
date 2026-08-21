@@ -58,7 +58,13 @@ public class MovieMetadataProvider
     ISearchProvider<MovieInfo, FilmInfo>,
     IMetadataProvider<Movie, MovieInfo, FilmInfo>
 {
-    public string GetSearchKeyword(MovieInfo info) => info.Path;
+    public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(MovieInfo info)
+    {
+        // Prefer Jellyfin's already-cleaned title; fall back to the raw path so odd
+        // filenames (transliterated, release junk) still get a second chance.
+        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+        if (!string.IsNullOrWhiteSpace(info.Path)) yield return info.Path;
+    }
 }
 
 public class MovieImageProvider

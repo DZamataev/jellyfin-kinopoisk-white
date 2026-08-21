@@ -15,12 +15,17 @@ public abstract record BaseMetadata
     public abstract string GetItemPath();
     public abstract RemoteSearchResult GetSearchResult();
     public abstract IEnumerable<(ImageType, string)> GetImages();
+
+    // Release year of this candidate, used to disambiguate same-named results.
+    // Null when the metadata type carries no year (persons, episodes).
+    public virtual int? GetYear() => null;
 }
 
 public record FilmInfo: BaseMetadata
 {
     public override string GetRootPath() => "movies";
     public override string GetItemPath() => "movie";
+    public override int? GetYear() => ProductionYear ?? KpProductionYear ?? OttProductionYear;
 
     public string ContentId { get; init; } = "";
     public FilmTitle Title { get; init; }
