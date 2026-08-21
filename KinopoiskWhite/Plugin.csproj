@@ -6,6 +6,9 @@
     <RootNamespace>KinopoiskWhite</RootNamespace>
     
     <DebugType>portable</DebugType>
+    <Version>1.0.1.2</Version>
+    <AssemblyVersion>1.0.1.2</AssemblyVersion>
+    <FileVersion>1.0.1.2</FileVersion>
   </PropertyGroup>
 
    <ItemGroup>
