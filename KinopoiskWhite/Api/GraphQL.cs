@@ -203,9 +203,13 @@ public class GraphQL : BaseSingleton, IGraphQL
         var rootPath = result.GetRootPath();
         var itemPath = result.GetItemPath();
 
-        foreach (var item in root.GetProperty(rootPath).EnumerateArray())
-            yield return JsonSerializer.Deserialize<T>(
-                item.GetProperty(itemPath), _jsonOptions);
+        if (rootPath == null || itemPath == null) yield break;
+        if (!root.TryGetProperty(rootPath, out var items)
+            || items.ValueKind != JsonValueKind.Array) yield break;
+
+        foreach (var item in items.EnumerateArray())
+            if (item.TryGetProperty(itemPath, out var element))
+                yield return JsonSerializer.Deserialize<T>(element, _jsonOptions);
     }
 
     public async Task<T> CallAndDeserializeApi<T>(

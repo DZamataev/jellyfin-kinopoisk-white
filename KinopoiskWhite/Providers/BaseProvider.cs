@@ -82,7 +82,7 @@ where TMetadata : BaseMetadata, new()
             string keyword = (year == null) ? title : $"{title} {year}";
 
             await foreach (var film in _graphql.SuggestSearch<TMetadata>(keyword, cancellationToken))
-                if (film?.Id != null)
+                if (film != null && film.Id != 0)
                     yield return film;
         }
     }

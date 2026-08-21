@@ -37,7 +37,11 @@ where TMetadata : BaseMetadata
         catch (Base.Error ex)
         {
             Logger.LogError("{message}", ex.Message);
-            return null;
+            // Jellyfin 10.11's ExecuteRemoteProviders dereferences the returned
+            // MetadataResult (result.HasMetadata) without a null check, so a null
+            // return throws NullReferenceException. Return an empty, no-metadata
+            // result instead so a "not found" is handled gracefully.
+            return new MetadataResult<TItemType> { HasMetadata = false, Item = new() };
         }
         return result;
     }

@@ -60,7 +60,7 @@ where TMetadata : BaseMetadata
             HashSet<(ImageType, string)> images = [];
 
             metadata = await GetInfoByKid(kid, cancellationToken);
-            foreach (var img in metadata?.GetImages())
+            foreach (var img in metadata?.GetImages() ?? [])
                 images.Add(img);
 
             if (item.TryGetContentId(out string cid))
@@ -103,7 +103,7 @@ where TMetadata : BaseMetadata
             }
 
             var count = 0;
-            foreach (var img in chunk?.GetImages())
+            foreach (var img in chunk?.GetImages() ?? [])
             {
                 images.Add(img);
                 count++;

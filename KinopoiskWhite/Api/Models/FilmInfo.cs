@@ -117,14 +117,14 @@ public record FilmInfo: BaseMetadata
     public override RemoteSearchResult GetSearchResult()
     {
         string title;
-        if (!string.IsNullOrWhiteSpace(Title.Russian))
+        if (!string.IsNullOrWhiteSpace(Title?.Russian))
         {
             title = Title.Russian;
-            if (!string.IsNullOrWhiteSpace(Title.Original))
+            if (!string.IsNullOrWhiteSpace(Title?.Original))
                 title += $" ({Title.Original})";
         }
         else
-            title = Title.Original;
+            title = Title?.Original;
 
         RemoteSearchResult result = new()
         {

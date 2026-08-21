@@ -24,7 +24,7 @@ public record FilmEpisode : BaseMetadata
     public override RemoteSearchResult GetSearchResult()
     {
         RemoteSearchResult result = new() {
-            Name = Title.Russian ?? Title.Original,
+            Name = Title?.Russian ?? Title?.Original,
         };
         foreach (var (_, url) in GetImages())
         {

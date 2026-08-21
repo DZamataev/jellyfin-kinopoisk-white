@@ -61,6 +61,8 @@ public static class ItemLookupInfoExtensions
 
     public static void SetContentId(this IHasProviderIds info, string cid)
     {
-        if (cid != null) info.SetProviderId(ContentId, cid);
+        // Jellyfin 10.11's SetProviderId throws on empty/whitespace values, so
+        // guard against those (not just null) — the API may return an empty id.
+        if (!string.IsNullOrWhiteSpace(cid)) info.SetProviderId(ContentId, cid);
     }
 }
