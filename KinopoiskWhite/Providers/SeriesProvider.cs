@@ -55,7 +55,11 @@ public class SeriesMetadataProvider
     ISearchProvider<SeriesInfo, FilmInfo>,
     IMetadataProvider<Series, SeriesInfo, FilmInfo>
 {
-    public string GetSearchKeyword(SeriesInfo info) => info.Name;
+    public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(SeriesInfo info)
+    {
+        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+        if (!string.IsNullOrWhiteSpace(info.Path)) yield return info.Path;
+    }
 }
 
 

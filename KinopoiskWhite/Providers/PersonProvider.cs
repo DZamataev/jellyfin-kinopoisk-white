@@ -47,7 +47,10 @@ public class PersonMetadataProvider
     ISearchProvider<PersonLookupInfo, FilmPerson>,
     IMetadataProvider<Person, PersonLookupInfo, FilmPerson>
 {
-    public string GetSearchKeyword(PersonLookupInfo info) => info.Name;
+    public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(PersonLookupInfo info)
+    {
+        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+    }
 }
 
 

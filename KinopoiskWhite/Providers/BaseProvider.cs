@@ -87,16 +87,48 @@ where TMetadata : BaseMetadata, new()
         }
     }
 
+    // Try each keyword source in order (e.g. Jellyfin's cleaned Name, then the raw
+    // file path as a fallback). Within the candidates, prefer one whose year matches
+    // the target (±1) so same-named films are disambiguated; if no year is known or
+    // nothing matches, fall back to the first hit (previous behaviour).
     public async Task<TMetadata>
-    GetKinopoiskId(string path, CancellationToken cancellationToken)
+    GetKinopoiskId(IEnumerable<string> keywords, int? year, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Get kinopoisk ID {path}", path);
+        _logger.LogDebug("Get kinopoisk ID (target year {year})", year);
 
-        await foreach (var item in GetSearchResults(path, cancellationToken))
-            return item;
+        TMetadata fallback = null;
+        string firstKeyword = null;
 
-        throw new Error.GettingKid(path);
+        foreach (var keyword in keywords)
+        {
+            if (string.IsNullOrWhiteSpace(keyword)) continue;
+            firstKeyword ??= keyword;
+
+            await foreach (var item in GetSearchResults(keyword, cancellationToken))
+            {
+                if (item == null || item.Id == 0) continue;
+
+                if (year == null) return item;
+
+                var itemYear = item.GetYear();
+                if (itemYear != null && System.Math.Abs(itemYear.Value - year.Value) <= 1)
+                    return item;
+
+                fallback ??= item;
+            }
+        }
+
+        if (fallback != null) return fallback;
+
+        // No usable keyword at all vs. searched-but-nothing-found.
+        if (firstKeyword == null) throw new Error.EmptySearchString();
+        throw new Error.GettingKid(firstKeyword);
     }
+
+    // Backward-compatible single-keyword entry (no year awareness).
+    public Task<TMetadata>
+    GetKinopoiskId(string path, CancellationToken cancellationToken)
+    => GetKinopoiskId(new[] { path }, null, cancellationToken);
 
     public abstract Task<TMetadata> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken);
     public async Task<TMetadata> Fetch(int kinopoiskId, CancellationToken cancellationToken)

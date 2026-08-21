@@ -169,6 +169,55 @@ public class MovieProviderTests
         Assert.Equal(info.Title.Russian, result?.Item?.Name);
     }
 
+    // A suggest response where the FIRST (top) result is the wrong year and the
+    // right-year candidate is further down the list.
+    static HttpResponseMessage SuggestTwo(FilmInfo top, FilmInfo other) => new()
+    {
+        StatusCode = System.Net.HttpStatusCode.OK,
+        Content = JsonContent.Create(new {
+            data = new { suggest = new { top = new {
+                topResult = new { global = top },
+                movies = new[] { new { movie = other } },
+        }}}})
+    };
+
+    [Fact] public async Task ShouldPreferYearMatchOverFirstResult()
+    {
+        var wrong = new FilmInfo { Id = 111, Title = new() { Russian = "Радуга (фильм)", Original = "R" }, ProductionYear = 2010 };
+        var right = new FilmInfo { Id = 222, Title = new() { Russian = "Радуга (мультфильм)", Original = "R" }, ProductionYear = 1975 };
+        httpFactory.SetResponses([ SuggestTwo(wrong, right) ]);
+
+        MovieInfo item = new() { Path = "Радуга", Year = 1975 };
+        var result = await metadataProvider.MockResolveInfo(item, token);
+
+        Assert.Equal("Радуга (мультфильм)", result?.Item?.Name);
+        Assert.Equal(222, item.GetDefaultId());
+    }
+
+    [Fact] public async Task ShouldFallBackToFirstWhenNoYearMatches()
+    {
+        var first = new FilmInfo { Id = 111, Title = new() { Russian = "Первый", Original = "F" }, ProductionYear = 2000 };
+        var second = new FilmInfo { Id = 222, Title = new() { Russian = "Второй", Original = "S" }, ProductionYear = 2001 };
+        httpFactory.SetResponses([ SuggestTwo(first, second) ]);
+
+        MovieInfo item = new() { Path = "Кино", Year = 1930 };
+        var result = await metadataProvider.MockResolveInfo(item, token);
+
+        Assert.Equal("Первый", result?.Item?.Name);
+    }
+
+    [Fact] public async Task ShouldTakeFirstWhenNoYearGiven()
+    {
+        var first = new FilmInfo { Id = 111, Title = new() { Russian = "Первый", Original = "F" }, ProductionYear = 2000 };
+        var second = new FilmInfo { Id = 222, Title = new() { Russian = "Второй", Original = "S" }, ProductionYear = 1975 };
+        httpFactory.SetResponses([ SuggestTwo(first, second) ]);
+
+        MovieInfo item = new() { Path = "Кино" }; // no Year
+        var result = await metadataProvider.MockResolveInfo(item, token);
+
+        Assert.Equal("Первый", result?.Item?.Name);
+    }
+
     [Fact]
     public async Task ShouldGetImagesByKid()
     {

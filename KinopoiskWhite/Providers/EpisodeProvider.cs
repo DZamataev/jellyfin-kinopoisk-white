@@ -28,7 +28,12 @@ public class EpisodeMetadataProvider
     public override Task<FilmEpisode> GetInfoByKid(int kinopoiskId, CancellationToken cancellationToken)
     => Task.FromResult<FilmEpisode>(null);
 
-    public string GetSearchKeyword(EpisodeInfo info) => throw new System.NotImplementedException();
+    // Episodes aren't matched by keyword here; yield nothing so the caller reports a
+    // graceful "not found" instead of throwing NotImplementedException.
+    public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(EpisodeInfo info)
+    {
+        yield break;
+    }
 
     public async Task<MetadataResult<Episode>> GetMetadata
     (EpisodeInfo info, CancellationToken cancellationToken)

@@ -25,11 +25,17 @@ public static partial class StringExtensions
     [GeneratedRegex(@"(?i:EXTENDED|BDRIP|BRRIP|DVDRIP)")]
     private static partial Regex VideoFormats();
 
+    // Square/curly tag groups like [torrents.ru], [YTS.AM], {group}. Parentheses are
+    // left alone because they usually hold the year, e.g. "Title (1975)".
+    [GeneratedRegex(@"\[[^\]]*\]|\{[^}]*\}")]
+    private static partial Regex BracketTags();
+
     public static (string, int?)[] ParseFileName(this string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return [];
 
         var fileName = System.IO.Path.GetFileName(path);
+        fileName = BracketTags().Replace(fileName, " ");
         var byYear = ByYear();
         var parts = byYear.Split(fileName);
 
