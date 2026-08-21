@@ -60,10 +60,23 @@ public class MovieMetadataProvider
 {
     public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(MovieInfo info)
     {
-        // Prefer Jellyfin's already-cleaned title; fall back to the raw path so odd
-        // filenames (transliterated, release junk) still get a second chance.
-        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+        // Our ParseFileName cleans odd/transliterated/release-junk filenames better
+        // than Jellyfin's own parse, so drive the search from the raw path first and
+        // keep Jellyfin's cleaned Name only as a fallback.
         if (!string.IsNullOrWhiteSpace(info.Path)) yield return info.Path;
+        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+    }
+
+    // Prefer the year our own parser finds in the filename; fall back to Jellyfin's
+    // year (which can also come from the folder name, which we don't see). The year is
+    // only a soft preference for result selection, so a stray value is harmless.
+    public int? GetSearchYear(MovieInfo info)
+    {
+        var parsed = string.IsNullOrWhiteSpace(info.Path)
+            ? System.Array.Empty<(string, int?)>()
+            : KinopoiskWhite.Extensions.StringExtensions.ParseFileName(info.Path);
+        var ourYear = System.Linq.Enumerable.FirstOrDefault(parsed, x => x.Item2 != null).Item2;
+        return ourYear ?? info.Year;
     }
 }
 

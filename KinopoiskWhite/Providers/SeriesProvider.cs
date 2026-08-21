@@ -57,8 +57,9 @@ public class SeriesMetadataProvider
 {
     public System.Collections.Generic.IEnumerable<string> GetSearchKeywords(SeriesInfo info)
     {
-        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
+        // Same rationale as movies: our parser drives, Jellyfin's Name is the fallback.
         if (!string.IsNullOrWhiteSpace(info.Path)) yield return info.Path;
+        if (!string.IsNullOrWhiteSpace(info.Name)) yield return info.Name;
     }
 }
 

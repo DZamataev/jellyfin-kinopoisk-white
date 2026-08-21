@@ -15,6 +15,11 @@
     <EmbeddedResource Include="..\KinopoiskWhite\Api\Queries\*.gql">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+
+    <!-- Real filenames from a live Jellyfin library, used by RealLibraryParseTests. -->
+    <None Include="library-filenames.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
