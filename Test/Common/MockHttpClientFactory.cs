@@ -26,6 +26,10 @@ public class MockHttpClientFactory: Mock<IHttpClientFactory>
 
     public void SetResponse(HttpResponseMessage response) => SetResponses([response]);
 
+    // Body of the most recent outgoing request, so tests can assert on what was sent
+    // (e.g. that SuggestSearch carries yandexCityId).
+    public string LastRequestBody { get; private set; }
+
     readonly Stack<HttpResponseMessage> Responses = new();
     HttpClient HttpClient {
         get {
@@ -36,6 +40,8 @@ public class MockHttpClientFactory: Mock<IHttpClientFactory>
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>()
                 )
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                    LastRequestBody = request.Content?.ReadAsStringAsync().Result)
                 .ReturnsAsync(() => {
                     if (Responses.TryPop(out var response))
                         return response;

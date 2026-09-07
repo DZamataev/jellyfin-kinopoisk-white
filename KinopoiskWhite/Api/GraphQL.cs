@@ -147,6 +147,12 @@ public class GraphQL : BaseSingleton, IGraphQL
         return await Parse(response, cancellationToken);
     }
 
+    // A null anywhere along the path — including at the leaf — is reported as
+    // ElementIsNull. Checking only before GetProperty let a null leaf through as a
+    // JsonValueKind.Null element, which callers then dereferenced: the KinoPoisk API
+    // returns `data.suggest.top = null` (with an "Internal server error" in `errors`)
+    // for a large share of SuggestSearch calls, and that null surfaced as an opaque
+    // InvalidOperationException from JsonDocument.TryGetNamedPropertyValue.
     protected static JsonElement Walk(JsonElement root, string path)
     {
         foreach (var chunk in path.Split('.'))
@@ -156,6 +162,9 @@ public class GraphQL : BaseSingleton, IGraphQL
 
             root = root.GetProperty(chunk);
         }
+
+        if (root.ValueKind == JsonValueKind.Null)
+            throw new Error.ElementIsNull();
 
         return root;
     }
@@ -170,13 +179,32 @@ public class GraphQL : BaseSingleton, IGraphQL
         return Walk(root, path);
     }
 
+    // "Not found" and "the server faulted" are different: a null payload for a fetch
+    // by id legitimately means no such item, and callers (WithCache) turn that null
+    // into Error.GettingRemote. Keep that contract while Walk stays strict.
     public async Task<T> CallAndDeserialize<T>(
         string operationName, object variables, string path,
         CancellationToken cancellationToken)
     {
-        var root = await Call(operationName, variables, path, cancellationToken);
+        JsonElement root;
+        try
+        {
+            root = await Call(operationName, variables, path, cancellationToken);
+        }
+        catch (Error.ElementIsNull)
+        {
+            return default;
+        }
+
         return JsonSerializer.Deserialize<T>(root, _jsonOptions);
     }
+
+    // yandexCityId is required in practice: without it the API answers
+    // `{"errors":[{"message":"Internal server error","path":["suggest","top"]}]}` and
+    // `data.suggest.top = null` for roughly half of all calls (measured from the
+    // Jellyfin host: 12/20 null without it, 0/20 with it). 213 is Moscow — the value
+    // the site's own web client sends by default.
+    public const int DefaultYandexCityId = 213;
 
     public async IAsyncEnumerable<T>
     SuggestSearch<T>(string keyword, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -184,7 +212,7 @@ public class GraphQL : BaseSingleton, IGraphQL
     {
         var root = await Call(
             "SuggestSearch",
-            new { keyword, limit = 10 },
+            new { keyword, limit = 10, yandexCityId = DefaultYandexCityId },
             "data.suggest.top",
             cancellationToken
         ).ConfigureAwait(false);
