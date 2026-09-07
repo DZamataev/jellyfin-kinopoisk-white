@@ -9,6 +9,14 @@
     "imageUrl": "https://avatars.mds.yandex.net/get-vthumb/880526/8e310a4ac77a414a5fc3c20eba8bb6a1/800x450",
     "versions": [
       {
+        "version": "1.0.1.4",
+        "changelog": "Fix identification failures caused by the API: send yandexCityId in SuggestSearch (without it graphql.kinopoisk.ru answers \"Internal server error\" with data.suggest.top = null on roughly half of all calls), and report a null leaf in Walk as ElementIsNull instead of leaking InvalidOperationException.\n",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-09-07T00:00:00.0000000Z",
+        "sourceUrl": "https://github.com/DZamataev/jellyfin-kinopoisk-white/releases/download/v1.0.1.4/KinopoiskWhite.zip",
+        "checksum": "2d19a0e2b673ba0c937082874b2dec5b"
+      },
+      {
         "version": "1.0.1.3",
         "changelog": "Smarter identification for odd/transliterated filenames: year-aware result selection, prefer our own filename parser (path first, year from our parse), strip release/quality/source tokens and trailing release groups.\n",
         "targetAbi": "10.11.0.0",

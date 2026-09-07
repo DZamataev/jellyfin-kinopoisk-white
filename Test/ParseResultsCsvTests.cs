@@ -80,7 +80,9 @@ public class ParseResultsCsvTests
         var payload = JsonSerializer.Serialize(new
         {
             operationName = "SuggestSearch",
-            variables = new { keyword, limit = 5 },
+            // yandexCityId is mandatory in practice — without it the API faults with
+            // `data.suggest.top = null` on roughly half the calls. See GraphQL.DefaultYandexCityId.
+            variables = new { keyword, limit = 5, yandexCityId = 213 },
             query
         });
 
